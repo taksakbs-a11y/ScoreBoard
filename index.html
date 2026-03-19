@@ -45,7 +45,7 @@
       line-height: 1.6;
       margin-bottom: 12px;
     }
-    textarea, input {
+    textarea, input, select {
       width: 100%;
       background: #0b1220;
       color: #e5e7eb;
@@ -165,6 +165,65 @@
       border-bottom-right-radius: 12px;
     }
     td.name { text-align: left; font-weight: 700; font-size: 18px; }
+    .cell-reach {
+      box-shadow: inset 0 0 0 3px #facc15;
+      border-radius: 10px;
+    }
+    .status-stand-correct {
+      box-shadow: inset 0 0 0 3px #facc15;
+      border-radius: 999px;
+    }
+    .status-stand-miss {
+      box-shadow: inset 0 0 0 3px #ef4444;
+      border-radius: 999px;
+    }
+    td.actions-inline {
+      white-space: nowrap;
+      min-width: 190px;
+    }
+    td.actions-inline button {
+      margin-right: 6px;
+    }
+    td.actions-inline button:last-child {
+      margin-right: 0;
+    }
+    .timer-bar-wrap {
+      position: relative;
+      width: 100%;
+      height: 36px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(148,163,184,0.18);
+      border: 1px solid #475569;
+      margin-top: 10px;
+    }
+    .timer-bar-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(59,130,246,0.9), rgba(14,165,233,0.9));
+      transition: width 0.8s linear;
+    }
+    .timer-bar-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      z-index: 2;
+    }
+
+    td.point-big {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      color: #c4b5fd;
+      white-space: nowrap;
+    }
     td.score-big, td.miss-big {
       font-size: 30px;
       font-weight: 800;
@@ -174,6 +233,7 @@
     td.miss-big { color: #fca5a5; }
     tr.win td { background: rgba(22,163,74,0.14); }
     tr.lose td { background: rgba(220,38,38,0.14); }
+    tr.resting td { background: rgba(148,163,184,0.12); color: #cbd5e1; }
     .status {
       display: inline-block;
       min-width: 88px;
@@ -191,9 +251,9 @@
       line-height: 1.6;
     }
     .controller-score-area {
-      position: sticky;
-      top: 20px;
-      align-self: start;
+      position: static;
+      top: auto;
+      align-self: auto;
     }
     .presenter-link {
       margin-left: auto;
@@ -312,8 +372,52 @@
         <button id="resetAllBtn" class="danger">全リセット</button>
       </div>
 
+      
       <h2>ルール</h2>
+      <div class="sub">ルールを選ぶと、初期値が自動で入ります。必要なら数値を調整して適用してください。</div>
       <div class="row">
+        <div>
+          <div class="sub" style="margin:0 0 6px;">ルール種別</div>
+          <select id="ruleTypeSelect">
+            <option value="maru_batsu">N〇M×</option>
+            <option value="maru_rest">N〇M休</option>
+            <option value="freeze">Freeze</option>
+            <option value="up_down">Up Down</option>
+            <option value="by">By</option>
+            <option value="swedish">Swedish</option>
+            <option value="divide">Divide</option>
+            <option value="timerace">Timerace</option>
+            <option value="combo_correct">連答付き</option>
+            <option value="combo_miss">連誤答付き</option>
+            <option value="attack_survival">Attack survival</option>
+          </select>
+        </div>
+        <div>
+          <div class="sub" style="margin:0 0 6px;">ルール名表示</div>
+          <input id="ruleLabelInput" value="7〇3×" />
+        </div>
+      </div>
+      <div id="ruleParamsBox">
+        <div class="row">
+          <div>
+            <div class="sub" style="margin:0 0 6px;">パラメータ1</div>
+            <input id="ruleParam1" type="number" value="7" />
+          </div>
+          <div>
+            <div class="sub" style="margin:0 0 6px;">パラメータ2</div>
+            <input id="ruleParam2" type="number" value="3" />
+          </div>
+        </div>
+        <div class="row" id="ruleParam3Row" style="display:none;">
+          <div>
+            <div class="sub" style="margin:0 0 6px;">パラメータ3</div>
+            <input id="ruleParam3" type="number" value="0" />
+          </div>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="row" id="legacyRuleRow" style="display:none;">
         <div>
           <div class="sub" style="margin:0 0 6px;">勝ち抜け正解数</div>
           <input id="winScore" type="number" value="7" min="1" />
@@ -343,10 +447,51 @@
       <div class="footer">観客用は ?view=presenter を付けたURLを配布します。</div>
     </div>
 
+    
     <div class="main">
       <div id="messageBox" class="message"></div>
 
-      <div class="question-card">
+      <div class="controller-score-area">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>順</th>
+                <th>名前</th>
+                <th id="ctrlPointHeader" style="display:none;">ポイント</th>
+                <th id="ctrlCorrectHeader">正解</th>
+                <th id="ctrlMissHeader">誤答</th>
+                <th>状態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="ctrlScoreTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="btns" style="margin-top:0; margin-bottom:12px; grid-template-columns:1fr;">
+        <button id="skipQuestionBtn" class="secondary">スルー</button>
+      </div>
+
+      <div class="question-card" style="margin-top:16px; margin-bottom:12px; padding:12px;">
+        <div class="label">現在のルール</div>
+        <div id="ctrlCurrentRuleTitle" class="question-title" style="font-size:18px; margin:0;">7〇3×</div>
+        <div id="ctrlCurrentRuleDetail" class="sub" style="margin-top:8px; margin-bottom:0;">勝ち抜け 7 / 失格 3</div>
+        <div id="ctrlTimerBox" style="display:none; margin-top:10px;">
+          <div class="timer-bar-wrap"><div id="ctrlTimerFill" class="timer-bar-fill"></div><div id="ctrlTimerText" class="timer-bar-text">5:00</div></div>
+          <div class="btns" style="grid-template-columns:1fr 1fr; margin-top:10px;">
+            <button id="leftTimerBtn" class="secondary">タイマー開始</button>
+            <button id="rightTimerBtn" class="secondary" disabled>タイマー停止</button>
+          </div>
+          <div class="btns" style="grid-template-columns:1fr 1fr; margin-top:10px;">
+            <button id="showScoresBtn" class="secondary">得点表示</button>
+            <div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="question-card" style="margin-bottom:16px;">
         <div class="question-meta">
           <div>
             <div class="label">直前に確定した問題</div>
@@ -359,34 +504,15 @@
         <div id="ctrlExplanationBox" class="explanation-box">解説：</div>
       </div>
 
-      <div class="controller-score-area">
-        <div class="summary">
-          <div class="mini-card"><div class="label">参加者数</div><div id="ctrlTotalPlayers" class="value">0</div></div>
-          <div class="mini-card"><div class="label">進行中</div><div id="ctrlPlayingCount" class="value">0</div></div>
-          <div class="mini-card"><div class="label">勝抜</div><div id="ctrlWinCount" class="value">0</div></div>
-          <div class="mini-card"><div class="label">失格</div><div id="ctrlLoseCount" class="value">0</div></div>
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>順</th>
-                <th>名前</th>
-                <th>正解</th>
-                <th>誤答</th>
-                <th>状態</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="ctrlScoreTableBody"></tbody>
-          </table>
-        </div>
+      <div class="summary">
+        <div class="mini-card"><div class="label">参加者数</div><div id="ctrlTotalPlayers" class="value">0</div></div>
+        <div class="mini-card"><div class="label">進行中</div><div id="ctrlPlayingCount" class="value">0</div></div>
+        <div class="mini-card"><div class="label">勝抜</div><div id="ctrlWinCount" class="value">0</div></div>
+        <div class="mini-card"><div class="label">失格</div><div id="ctrlLoseCount" class="value">0</div></div>
       </div>
     </div>
-  </div>
 
-  <div id="presenterView" class="presenter-main">
+<div id="presenterView" class="presenter-main">
     <div class="presenter-grid">
       <div class="presenter-left">
         <div class="table-wrap">
@@ -395,8 +521,9 @@
               <tr>
                 <th>順</th>
                 <th>名前</th>
-                <th>正解</th>
-                <th>誤答</th>
+                <th id="presenterPointHeader" style="display:none;">ポイント</th>
+                <th id="presenterCorrectHeader">正解</th>
+                <th id="presenterMissHeader">誤答</th>
                 <th>状態</th>
               </tr>
             </thead>
@@ -456,6 +583,7 @@
     const resetAllBtn = document.getElementById('resetAllBtn');
     const applyRuleBtn = document.getElementById('applyRuleBtn');
     const undoBtn = document.getElementById('undoBtn');
+    const skipQuestionBtn = document.getElementById('skipQuestionBtn');
     const rankModeBtn = document.getElementById('rankModeBtn');
     const inputOrderBtn = document.getElementById('inputOrderBtn');
     const sampleBtn = document.getElementById('sampleBtn');
@@ -470,6 +598,17 @@
     const roomIdInput = document.getElementById('roomIdInput');
     const connectBtn = document.getElementById('connectBtn');
     const resetRemoteBtn = document.getElementById('resetRemoteBtn');
+    const ruleTypeSelect = document.getElementById('ruleTypeSelect');
+    const ruleLabelInput = document.getElementById('ruleLabelInput');
+    const ruleParam1 = document.getElementById('ruleParam1');
+    const ruleParam2 = document.getElementById('ruleParam2');
+    const ruleParam3 = document.getElementById('ruleParam3');
+    const ruleParam3Row = document.getElementById('ruleParam3Row');
+    const leftTimerBtn = document.getElementById('leftTimerBtn');
+    const showScoresBtn = document.getElementById('showScoresBtn');
+    const rightTimerBtn = document.getElementById('rightTimerBtn');
+    const ctrlTimerFill = document.getElementById('ctrlTimerFill');
+    const presenterTimerFill = document.getElementById('presenterTimerFill');
 
     let app = null;
     let db = null;
@@ -484,10 +623,259 @@
       lastJudgedIndex: -1,
       presenterRanked: false,
       playerInput: '',
-      csvInput: ''
+      csvInput: '',
+      ruleConfig: {
+        type: 'maru_batsu',
+        label: '7〇3×',
+        param1: 7,
+        param2: 3,
+        param3: 0
+      },
+      timerRunning: false,
+      timerPaused: false,
+      timerEndAt: 0,
+      timerRemainingMs: 0,
+      timerRevealScores: false
     };
 
     const localHistory = [];
+
+
+    const RULE_PRESETS = {
+      maru_batsu: { label: '7〇3×', p1Label: '勝ち抜け正解数 N', p2Label: '失格誤答数 M', p3Label: '', p1: 7, p2: 3, p3: 0, showP2: true, showP3: false },
+      maru_rest: { label: '7〇1休', p1Label: '勝ち抜け正解数 N', p2Label: '休み回数 M', p3Label: '', p1: 7, p2: 1, p3: 0, showP2: true, showP3: false },
+      freeze: { label: 'Freeze 10', p1Label: '勝ち抜け正解数', p2Label: '', p3Label: '', p1: 10, p2: 0, p3: 0, showP2: false, showP3: false },
+      up_down: { label: '10 Up Down', p1Label: '勝ち抜け正解数', p2Label: '', p3Label: '', p1: 10, p2: 0, p3: 0, showP2: false, showP3: false },
+      by: { label: '10By10', p1Label: '初期誤答点', p2Label: 'By値', p3Label: '失格誤答数', p1: 10, p2: 10, p3: 6, showP2: true, showP3: true },
+      swedish: { label: 'Swedish 10', p1Label: '勝ち抜け〇数', p2Label: '失格×数', p3Label: '', p1: 10, p2: 10, p3: 0, showP2: true, showP3: false },
+      divide: { label: 'Divide', p1Label: '初期点', p2Label: '勝ち抜け点', p3Label: '', p1: 10, p2: 100, p3: 0, showP2: true, showP3: false },
+      timerace: { label: 'Timerace', p1Label: '制限時間(分)', p2Label: '正解加点', p3Label: '誤答減点', p1: 5, p2: 1, p3: -1, showP2: true, showP3: true },
+      combo_correct: { label: '連答付き', p1Label: '勝ち抜け〇数', p2Label: '失格×数', p3Label: '', p1: 5, p2: 2, p3: 0, showP2: true, showP3: false },
+      combo_miss: { label: '連誤答付き', p1Label: '勝ち抜け〇数', p2Label: '失格×数', p3Label: '', p1: 5, p2: 3, p3: 0, showP2: true, showP3: false },
+      attack_survival: { label: 'Attack survival', p1Label: '初期点', p2Label: '他人正解減点', p3Label: '自誤答減点', p1: 30, p2: 2, p3: 3, showP2: true, showP3: true }
+    };
+
+    function getRuleDetailText(rule) {
+      if (!rule) return '';
+      const t = rule.type;
+      if (t === 'maru_batsu') return '勝ち抜け ' + rule.param1 + ' / 失格 ' + rule.param2;
+      if (t === 'maru_rest') return '勝ち抜け ' + rule.param1 + ' / 誤答で ' + rule.param2 + '休';
+      if (t === 'freeze') return '勝ち抜け ' + rule.param1 + ' / 誤答回数分休み';
+      if (t === 'up_down') return '勝ち抜け ' + rule.param1 + ' / 1×で0点 / 2×で失格';
+      if (t === 'by') return '初期誤答点 ' + rule.param1 + ' / By値 ' + rule.param2 + ' / 失格 ' + (rule.param3 || 6) + '×';
+      if (t === 'swedish') return '勝ち抜け ' + rule.param1 + '〇 / 失格 ' + rule.param2 + '×';
+      if (t === 'divide') return '初期点 ' + rule.param1 + ' / 勝ち抜け ' + rule.param2;
+      if (t === 'timerace') return rule.param1 + '分 / 正解 +' + rule.param2 + ' / 誤答 ' + rule.param3;
+      if (t === 'combo_correct') return '勝ち抜け ' + rule.param1 + '〇 / 失格 ' + rule.param2 + '×';
+      if (t === 'combo_miss') return '勝ち抜け ' + rule.param1 + '〇 / 失格 ' + rule.param2 + '×';
+      if (t === 'attack_survival') return '初期点 ' + rule.param1 + ' / 他人正解 -' + rule.param2 + ' / 自誤答 -' + rule.param3;
+      return '';
+    }
+
+    function applyPresetToInputs(type) {
+      const preset = RULE_PRESETS[type];
+      if (!preset || !ruleTypeSelect) return;
+      ruleTypeSelect.value = type;
+      ruleLabelInput.value = preset.label;
+      ruleParam1.value = preset.p1;
+      ruleParam2.value = preset.p2;
+      ruleParam3.value = preset.p3;
+      const labels = document.querySelectorAll('#ruleParamsBox .sub');
+      if (labels[0]) labels[0].textContent = preset.p1Label;
+      if (labels[1]) labels[1].textContent = preset.p2Label;
+      if (labels[2]) labels[2].textContent = preset.p3Label;
+      ruleParam2.parentElement.style.display = preset.showP2 ? '' : 'none';
+      ruleParam3Row.style.display = preset.showP3 ? '' : 'none';
+    }
+
+    function syncRuleInputsFromState() {
+      if (!ruleTypeSelect || !state.ruleConfig) return;
+      const type = state.ruleConfig.type || 'maru_batsu';
+      applyPresetToInputs(type);
+      ruleTypeSelect.value = type;
+      ruleLabelInput.value = state.ruleConfig.label || RULE_PRESETS[type].label;
+      ruleParam1.value = state.ruleConfig.param1 ?? RULE_PRESETS[type].p1;
+      ruleParam2.value = state.ruleConfig.param2 ?? RULE_PRESETS[type].p2;
+      ruleParam3.value = state.ruleConfig.param3 ?? RULE_PRESETS[type].p3;
+    }
+
+    function readRuleConfigFromInputs() {
+      return {
+        type: ruleTypeSelect.value,
+        label: ruleLabelInput.value.trim() || RULE_PRESETS[ruleTypeSelect.value].label,
+        param1: Number(ruleParam1.value) || 0,
+        param2: Number(ruleParam2.value) || 0,
+        param3: Number(ruleParam3.value) || 0
+      };
+    }
+
+
+    
+    function initializePlayersForRule(players, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      return players.map((player, idx) => ({
+        id: player.id,
+        name: player.name,
+        inputOrder: player.inputOrder ?? idx,
+        correct: 0,
+        miss: rule.type === 'by' ? (Number(rule.param1) || 10) : 0,
+        currentPoint: rule.type === 'divide' ? (Number(rule.param1) || 10) : (rule.type === 'by' ? (Number(rule.param1) || 10) : 0),
+        upDownStrike: 0,
+        restRemaining: 0,
+        pendingRest: 0,
+        attackPoint: rule.type === 'attack_survival' ? (Number(rule.param1) || 30) : 0,
+        standingCorrect: false,
+        standingMiss: false
+      }));
+    }
+
+    function formatTimer(ms) {
+      const totalMs = Math.max(0, Number(ms || 0));
+      const sec = Math.ceil(totalMs / 1000);
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return String(m) + ':' + String(s).padStart(2, '0');
+    }
+
+
+    function isCorrectReach(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'timerace' || rule.type === 'attack_survival') return false;
+      if (rule.type === 'divide') {
+        const current = Number(player.currentPoint || 0);
+        return current < getRuleWinScore(rule) && current + 10 >= getRuleWinScore(rule);
+      }
+      if (rule.type === 'by') {
+        const missPoint = Number(player.currentPoint || (Number(rule.param1) || 10));
+        const now = Number(player.correct || 0) * missPoint;
+        const nxt = (Number(player.correct || 0) + 1) * missPoint;
+        return now < getRuleWinScore(rule) && nxt >= getRuleWinScore(rule);
+      }
+      return Number(player.correct || 0) === getRuleWinScore(rule) - 1;
+    }
+
+    function isMissReach(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'attack_survival') {
+        const now = Number(player.attackPoint || 0);
+        return now > 0 && now <= (Number(rule.param3) || 0);
+      }
+      if (rule.type === 'divide') {
+        const current = Number(player.currentPoint || 0);
+        const nextMiss = Number(player.miss || 0) + 1;
+        return Math.floor(current / nextMiss) <= 0;
+      }
+      if (rule.type === 'up_down') return Number(player.upDownStrike || 0) === 1;
+      if (rule.type === 'by') {
+        const startMiss = Number(rule.param1) || 10;
+        const loseMissCount = Number(rule.param3) || 6;
+        const loseAtPoint = startMiss - loseMissCount;
+        return Number(player.currentPoint || startMiss) === loseAtPoint + 1;
+      }
+      if (rule.type === 'swedish') {
+        const c = Number(player.correct || 0);
+        let addMiss = 1;
+        if (c >= 1 && c <= 2) addMiss = 2;
+        else if (c >= 3 && c <= 5) addMiss = 3;
+        else if (c >= 6) addMiss = 4;
+        return Number(player.miss || 0) + addMiss >= (Number(rule.param2) || 10);
+      }
+      if (rule.type === 'combo_miss') return Number(player.miss || 0) >= (Number(rule.param2) || 3) - 2;
+      return Number(getDisplayedMiss(player, rule)) === Number(state.loseMiss || 3) - 1;
+    }
+
+
+    function isPointRule(ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      return ['by', 'divide', 'timerace', 'attack_survival'].includes(rule.type);
+    }
+
+    function getPointValue(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'divide') return Number(player.currentPoint || 0);
+      if (rule.type === 'attack_survival') return Number(player.attackPoint || 0);
+      if (rule.type === 'by') return Number(player.correct || 0) * Number(player.currentPoint || (Number(rule.param1) || 10));
+      if (rule.type === 'timerace') {
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
+        return Number(player.currentPoint || 0);
+      }
+      return '';
+    }
+
+    function getRuleWinScore(ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'divide') return Number(rule.param2) || 100;
+      if (rule.type === 'up_down') return Number(rule.param1) || 10;
+      if (rule.type === 'by') return (Number(rule.param1) || 10) * (Number(rule.param2) || 10);
+      if (rule.type === 'swedish') return Number(rule.param1) || 10;
+      if (rule.type === 'combo_correct' || rule.type === 'combo_miss') return Number(rule.param1) || 5;
+      return Number(state.winScore || 7);
+    }
+
+    function getDisplayedCorrect(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'timerace') {
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
+      }
+      return Number(player.correct || 0);
+    }
+
+    function getDisplayedMiss(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'timerace') {
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
+      }
+      if (rule.type === 'up_down') return Number(player.upDownStrike || 0);
+      if (rule.type === 'by') return Number(player.currentPoint || (Number(rule.param1) || 10));
+      return Number(player.miss || 0);
+    }
+
+    function isResting(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      return (rule.type === 'maru_rest' || rule.type === 'freeze') && Number(player.restRemaining || 0) > 0;
+    }
+
+    function getShownStatus(player) {
+      const rule = state.ruleConfig || { type: 'maru_batsu' };
+      const base = getStatus(player);
+      if (base === '勝抜' || base === '失格') return base;
+      if (isResting(player, rule)) return '休み(' + Number(player.restRemaining || 0) + ')';
+      if (rule.type === 'combo_correct' && player.standingCorrect) return '起立状態';
+      if (rule.type === 'combo_miss' && player.standingMiss) return '起立状態';
+      return base;
+    }
+
+    function skipQuestionOnState(nextState) {
+      const rule = nextState.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'maru_rest' || rule.type === 'freeze') {
+        nextState.players = nextState.players.map(p => {
+          let restRemaining = Number(p.restRemaining || 0);
+          let pendingRest = Number(p.pendingRest || 0);
+
+          if (restRemaining > 0) {
+            restRemaining = Math.max(0, restRemaining - 1);
+          }
+
+          if (pendingRest > 0) {
+            restRemaining = pendingRest;
+            pendingRest = 0;
+          }
+
+          return {
+            ...p,
+            restRemaining,
+            pendingRest
+          };
+        });
+      }
+      judgeCurrentQuestionOnState(nextState);
+    }
 
     function configured() {
       return Object.values(firebaseConfig).every(v => v && !String(v).includes('REPLACE_ME'));
@@ -511,6 +899,44 @@
     }
 
     function getBaseStatus(player) {
+      const rule = state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'divide') {
+        const point = Number(player.currentPoint || 0);
+        if (point <= 0) return '失格';
+        if (point >= getRuleWinScore(rule)) return '勝抜';
+        return '進行中';
+      }
+      if (rule.type === 'up_down') {
+        if (Number(player.correct || 0) >= getRuleWinScore(rule)) return '勝抜';
+        if (Number(player.upDownStrike || 0) >= 2) return '失格';
+        return '進行中';
+      }
+      if (rule.type === 'attack_survival') {
+        if (Number(player.attackPoint || 0) <= 0) return '失格';
+        return '進行中';
+      }
+      if (rule.type === 'by') {
+        const startMiss = Number(rule.param1) || 10;
+        const loseMissCount = Number(rule.param3) || 6;
+        const currentMissPoint = Number(player.currentPoint || startMiss);
+        const loseAtPoint = startMiss - loseMissCount;
+        if (currentMissPoint <= loseAtPoint) return '失格';
+        if ((Number(player.correct || 0) * currentMissPoint) >= getRuleWinScore(rule)) return '勝抜';
+        return '進行中';
+      }
+      if (rule.type === 'timerace') {
+        return '進行中';
+      }
+      if (rule.type === 'swedish') {
+        if (Number(player.correct || 0) >= getRuleWinScore(rule)) return '勝抜';
+        if (Number(player.miss || 0) >= (Number(rule.param2) || 10)) return '失格';
+        return '進行中';
+      }
+      if (rule.type === 'combo_correct' || rule.type === 'combo_miss') {
+        if (Number(player.correct || 0) >= getRuleWinScore(rule)) return '勝抜';
+        if (Number(player.miss || 0) >= (Number(rule.param2) || 3)) return '失格';
+        return '進行中';
+      }
       if (player.correct >= state.winScore) return '勝抜';
       if (player.miss >= state.loseMiss) return '失格';
       return '進行中';
@@ -648,22 +1074,25 @@
 
       displayPlayers.forEach((player, i) => {
         const status = getStatus(player);
+        const shownStatus = getShownStatus(player);
         const statusClass = getStatusClass(status);
         const tr = document.createElement('tr');
+        if (isResting(player, state.ruleConfig)) tr.className = 'resting';
         if (status === '勝抜') tr.className = 'win';
         if (status === '失格') tr.className = 'lose';
 
         tr.innerHTML =
           `<td>${i + 1}</td>` +
           `<td class="name"></td>` +
-          `<td class="score-big">${player.correct}</td>` +
-          `<td class="miss-big">${player.miss}</td>` +
-          `<td><span class="status ${statusClass}">${status}</span></td>` +
+          `<td class="point-big" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</td>` +
+          `<td class="score-big ${isCorrectReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedCorrect(player, state.ruleConfig)}</td>` +
+          `<td class="miss-big ${isMissReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedMiss(player, state.ruleConfig)}</td>` +
+          `<td><span class="status ${statusClass} ${((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect) ? 'status-stand-correct' : (((state.ruleConfig || {}).type === 'combo_miss' && player.standingMiss) ? 'status-stand-miss' : '')}">${shownStatus}</span></td>` +
           (forPresenter ? '' :
-            `<td>
+            `<td class="actions-inline">
               <button class="small success" data-action="correct" data-id="${player.id}">正解+1</button>
               <button class="small danger" data-action="miss" data-id="${player.id}">誤答+1</button>
-              <button class="small secondary" data-action="resetRow" data-id="${player.id}">その人をリセット</button>
+              <button class="small secondary" data-action="resetRow" data-id="${player.id}">リセット</button>
             </td>`);
 
         tr.querySelector('.name').textContent = player.name;
@@ -671,6 +1100,70 @@
       });
 
       return displayPlayers;
+    }
+
+
+    function renderTimerOnly() {
+      const rule = state.ruleConfig || RULE_PRESETS.maru_batsu;
+      const pointRule = isPointRule(rule);
+      if (ctrlPointHeader) ctrlPointHeader.style.display = pointRule ? '' : 'none';
+      if (presenterPointHeader) presenterPointHeader.style.display = pointRule ? '' : 'none';
+      if (ctrlCorrectHeader) ctrlCorrectHeader.textContent = pointRule ? '正解数' : '正解';
+      if (presenterCorrectHeader) presenterCorrectHeader.textContent = pointRule ? '正解数' : '正解';
+      if (ctrlMissHeader) ctrlMissHeader.textContent = pointRule ? '誤答数' : '誤答';
+      if (presenterMissHeader) presenterMissHeader.textContent = pointRule ? '誤答数' : '誤答';
+      const ctrlTimerBox = document.getElementById('ctrlTimerBox');
+      const presenterTimerBox = document.getElementById('presenterTimerBox');
+      const ctrlTimerText = document.getElementById('ctrlTimerText');
+      const presenterTimerText = document.getElementById('presenterTimerText');
+
+      const isTimerace = rule.type === 'timerace';
+      if (ctrlTimerBox) ctrlTimerBox.style.display = isTimerace ? '' : 'none';
+      if (presenterTimerBox) presenterTimerBox.style.display = isTimerace ? '' : 'none';
+      if (!isTimerace) return;
+
+      const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+      let remain = totalMs;
+
+      if (state.timerRunning) {
+        remain = Math.max(0, Number(state.timerEndAt || 0) - Date.now());
+        if (remain === 0) {
+          state.timerRunning = false;
+          state.timerPaused = false;
+          state.timerEndAt = 0;
+          state.timerRemainingMs = 0;
+        }
+      } else if (Number(state.timerRemainingMs || 0) > 0) {
+        remain = Number(state.timerRemainingMs || 0);
+      }
+
+      const pct = Math.max(0, Math.min(100, totalMs ? (remain / totalMs) * 100 : 0));
+      const timerText = formatTimer(remain);
+
+      if (ctrlTimerText) ctrlTimerText.textContent = timerText;
+      if (presenterTimerText) presenterTimerText.textContent = timerText;
+      if (ctrlTimerFill) ctrlTimerFill.style.width = pct + '%';
+      if (presenterTimerFill) presenterTimerFill.style.width = pct + '%';
+
+      if (leftTimerBtn && rightTimerBtn) {
+        if (state.timerRunning) {
+          leftTimerBtn.textContent = 'タイマー開始';
+          leftTimerBtn.disabled = true;
+          rightTimerBtn.textContent = 'タイマー停止';
+          rightTimerBtn.disabled = false;
+        } else if (state.timerPaused && Number(state.timerRemainingMs || 0) > 0) {
+          leftTimerBtn.textContent = 'タイマー再開';
+          leftTimerBtn.disabled = false;
+          rightTimerBtn.textContent = 'タイマーリセット';
+          rightTimerBtn.disabled = false;
+        } else {
+          leftTimerBtn.textContent = 'タイマー開始';
+          leftTimerBtn.disabled = false;
+          rightTimerBtn.textContent = 'タイマー停止';
+          rightTimerBtn.disabled = true;
+        }
+        if (showScoresBtn) showScoresBtn.disabled = !!state.timerRevealScores;
+      }
     }
 
     function render() {
@@ -687,17 +1180,49 @@
       if (csvInput) csvInput.value = state.csvInput || '';
       if (winScoreInput) winScoreInput.value = String(state.winScore);
       if (loseMissInput) loseMissInput.value = String(state.loseMiss);
+      syncRuleInputsFromState();
+      const rule = state.ruleConfig || RULE_PRESETS.maru_batsu;
+      const ctrlRuleTitle = document.getElementById('ctrlCurrentRuleTitle');
+      const ctrlRuleDetail = document.getElementById('ctrlCurrentRuleDetail');
+      const presenterRuleTitle = document.getElementById('presenterCurrentRuleTitle');
+      const presenterRuleDetail = document.getElementById('presenterCurrentRuleDetail');
+      const ctrlPointHeader = document.getElementById('ctrlPointHeader');
+      const presenterPointHeader = document.getElementById('presenterPointHeader');
+      const ctrlCorrectHeader = document.getElementById('ctrlCorrectHeader');
+      const ctrlMissHeader = document.getElementById('ctrlMissHeader');
+      const presenterCorrectHeader = document.getElementById('presenterCorrectHeader');
+      const presenterMissHeader = document.getElementById('presenterMissHeader');
+      const ctrlTimerBox = document.getElementById('ctrlTimerBox');
+      const presenterTimerBox = document.getElementById('presenterTimerBox');
+      const ctrlTimerText = document.getElementById('ctrlTimerText');
+      const presenterTimerText = document.getElementById('presenterTimerText');
+      if (ctrlRuleTitle) ctrlRuleTitle.textContent = rule.label;
+      if (ctrlRuleDetail) ctrlRuleDetail.textContent = getRuleDetailText(rule);
+      if (presenterRuleTitle) presenterRuleTitle.textContent = rule.label;
+      if (presenterRuleDetail) presenterRuleDetail.textContent = getRuleDetailText(rule);
+
+      const isTimerace = rule.type === 'timerace';
+      if (ctrlTimerBox) ctrlTimerBox.style.display = isTimerace ? '' : 'none';
+      if (presenterTimerBox) presenterTimerBox.style.display = isTimerace ? '' : 'none';
+      if (isTimerace) {
+        const remain = Math.max(0, Number(state.timerEndAt || 0) - Date.now());
+        const timerText = state.timerRunning ? formatTimer(remain) : formatTimer((Number(rule.param1) || 5) * 60 * 1000);
+        if (ctrlTimerText) ctrlTimerText.textContent = timerText;
+        if (presenterTimerText) presenterTimerText.textContent = timerText;
+      }
+      renderTimerOnly();
       if (presenterHint) {
         presenterHint.textContent = isPresenter ? '表示専用画面' : '同じHTMLを別ウィンドウで開くと表示専用画面になります。';
       }
     }
 
     async function setRemoteState(next) {
+      state = next;
       if (!roomRef) {
-        showMessage('先に Firebase に接続してください。');
+        render();
+        showMessage('ローカルで反映しました。Firebase接続後に同期できます。');
         return;
       }
-      state = next;
       await set(roomRef, state);
     }
 
@@ -791,7 +1316,19 @@
           lastJudgedIndex: typeof val.lastJudgedIndex === 'number' ? val.lastJudgedIndex : -1,
           presenterRanked: !!val.presenterRanked,
           playerInput: val.playerInput || '',
-          csvInput: val.csvInput || ''
+          csvInput: val.csvInput || '',
+          ruleConfig: val.ruleConfig || {
+            type: 'maru_batsu',
+            label: '7〇3×',
+            param1: 7,
+            param2: 3,
+            param3: 0
+          },
+          timerRunning: !!val.timerRunning,
+          timerPaused: !!val.timerPaused,
+          timerEndAt: Number(val.timerEndAt || 0),
+          timerRemainingMs: Number(val.timerRemainingMs || 0),
+          timerRevealScores: !!val.timerRevealScores
         };
         render();
       });
@@ -802,7 +1339,7 @@
     if (!isPresenter) {
       setPlayersBtn.addEventListener('click', async () => {
         pushHistory();
-        const next = { ...state, players: buildPlayersFromInput(), playerInput: playerInput.value };
+        const next = { ...state, players: initializePlayersForRule(buildPlayersFromInput(), state.ruleConfig), playerInput: playerInput.value };
         await setRemoteState(next);
         showMessage('参加者を反映しました。');
       });
@@ -811,25 +1348,131 @@
         pushHistory();
         const next = {
           ...state,
-          players: state.players.map(p => ({ ...p, correct: 0, miss: 0 })),
+          players: initializePlayersForRule(state.players, state.ruleConfig),
           presenterRanked: false
         };
         await setRemoteState(next);
         showMessage('全員の得点をリセットしました。');
       });
 
+      ruleTypeSelect.addEventListener('change', () => {
+        applyPresetToInputs(ruleTypeSelect.value);
+      });
+
       applyRuleBtn.addEventListener('click', async () => {
         pushHistory();
+        const ruleConfig = readRuleConfigFromInputs();
+        let nextWin = Number(winScoreInput.value) || 7;
+        let nextLose = Number(loseMissInput.value) || 3;
+
+        if (ruleConfig.type === 'maru_batsu') {
+          nextWin = ruleConfig.param1; nextLose = ruleConfig.param2;
+        } else if (ruleConfig.type === 'combo_correct' || ruleConfig.type === 'combo_miss') {
+          nextWin = ruleConfig.param1; nextLose = ruleConfig.param2;
+        } else if (ruleConfig.type === 'maru_rest') {
+          nextWin = ruleConfig.param1; nextLose = 999999;
+        } else if (ruleConfig.type === 'freeze') {
+          nextWin = ruleConfig.param1; nextLose = 999999;
+        } else if (ruleConfig.type === 'up_down') {
+          nextWin = ruleConfig.param1; nextLose = 2;
+        } else if (ruleConfig.type === 'swedish') {
+          nextWin = ruleConfig.param1; nextLose = ruleConfig.param2;
+        } else if (ruleConfig.type === 'divide') {
+          nextWin = ruleConfig.param2; nextLose = 999999;
+        } else if (ruleConfig.type === 'by') {
+          nextWin = (Number(ruleConfig.param1) || 10) * (Number(ruleConfig.param2) || 10);
+          nextLose = 6;
+        } else if (ruleConfig.type === 'timerace') {
+          nextWin = 999999; nextLose = 999999;
+        } else if (ruleConfig.type === 'attack_survival') {
+          nextWin = 999999; nextLose = 999999;
+        }
+
         const next = {
           ...state,
-          winScore: Number(winScoreInput.value) || 7,
-          loseMiss: Number(loseMissInput.value) || 3
+          winScore: nextWin,
+          loseMiss: nextLose,
+          ruleConfig,
+          timerRunning: false,
+          timerPaused: false,
+          timerEndAt: 0,
+          timerRemainingMs: 0,
+          timerRevealScores: false
         };
+        next.players = initializePlayersForRule(next.players, ruleConfig);
         await setRemoteState(next);
         showMessage('ルールを反映しました。');
       });
 
       undoBtn.addEventListener('click', undoLast);
+
+      leftTimerBtn?.addEventListener('click', async () => {
+        pushHistory();
+        const nextState = JSON.parse(JSON.stringify(state));
+        const totalMs = (Number((nextState.ruleConfig || {}).param1) || 5) * 60 * 1000;
+
+        if (!nextState.timerRunning && !nextState.timerPaused && Number(nextState.timerRemainingMs || 0) === 0) {
+          nextState.timerRemainingMs = totalMs;
+          nextState.timerEndAt = Date.now() + totalMs;
+          nextState.timerRunning = true;
+          nextState.timerPaused = false;
+          nextState.timerRevealScores = false;
+          await setRemoteState(nextState);
+          showMessage('タイマーを開始しました。');
+          return;
+        }
+
+        if (!nextState.timerRunning && nextState.timerPaused && Number(nextState.timerRemainingMs || 0) > 0) {
+          nextState.timerEndAt = Date.now() + Number(nextState.timerRemainingMs || 0);
+          nextState.timerRunning = true;
+          nextState.timerPaused = false;
+          await setRemoteState(nextState);
+          showMessage('タイマーを再開しました。');
+        }
+      });
+
+      showScoresBtn?.addEventListener('click', async () => {
+        pushHistory();
+        const nextState = cloneState(state);
+        nextState.timerRevealScores = true;
+        await setRemoteState(nextState);
+        state = nextState;
+        render();
+        showMessage('得点を表示しました。');
+      });
+
+      rightTimerBtn?.addEventListener('click', async () => {
+        pushHistory();
+        const nextState = JSON.parse(JSON.stringify(state));
+
+        if (nextState.timerRunning) {
+          nextState.timerRemainingMs = Math.max(0, Number(nextState.timerEndAt || 0) - Date.now());
+          nextState.timerEndAt = 0;
+          nextState.timerRunning = false;
+          nextState.timerPaused = true;
+          await setRemoteState(nextState);
+          showMessage('タイマーを停止しました。');
+          return;
+        }
+
+        if (!nextState.timerRunning && nextState.timerPaused) {
+          nextState.timerRemainingMs = 0;
+          nextState.timerEndAt = 0;
+          nextState.timerRunning = false;
+          nextState.timerPaused = false;
+          nextState.timerRevealScores = false;
+          await setRemoteState(nextState);
+          showMessage('タイマーをリセットしました。');
+        }
+      });
+
+      skipQuestionBtn.addEventListener('click', async () => {
+        pushHistory();
+        const nextState = JSON.parse(JSON.stringify(state));
+        skipQuestionOnState(nextState);
+        await setRemoteState(nextState);
+        showMessage('問題をスルーして次へ進みました。');
+      });
 
       rankModeBtn.addEventListener('click', async () => {
         pushHistory();
@@ -878,7 +1521,12 @@
           lastJudgedIndex: -1,
           presenterRanked: false,
           playerInput: '',
-          csvInput: ''
+          csvInput: '',
+          ruleConfig: { type: 'maru_batsu', label: '7〇3×', param1: 7, param2: 3, param3: 0 },
+          timerRunning: false,
+          timerPaused: false,
+          timerEndAt: 0,
+          timerRemainingMs: 0
         };
         render();
         showMessage('ルームを初期化しました。');
@@ -905,23 +1553,107 @@
         const id = button.getAttribute('data-id');
         const action = button.getAttribute('data-action');
         const nextState = JSON.parse(JSON.stringify(state));
+        const rule = nextState.ruleConfig || { type: 'maru_batsu' };
         pushHistory();
 
         for (let i = 0; i < nextState.players.length; i++) {
           const player = nextState.players[i];
           if (player.id !== id) continue;
 
-          if (action === 'correct' && getBaseStatus(player) === '進行中') {
-            player.correct += 1;
-            judgeCurrentQuestionOnState(nextState);
-          }
-          if (action === 'miss' && getBaseStatus(player) === '進行中') {
-            player.miss += 1;
-            judgeCurrentQuestionOnState(nextState);
-          }
           if (action === 'resetRow') {
-            player.correct = 0;
-            player.miss = 0;
+            const resetOne = initializePlayersForRule([{ ...player }], rule)[0];
+            Object.assign(player, resetOne);
+            break;
+          }
+
+          if (isResting(player, rule)) break;
+          if (getBaseStatus(player) !== '進行中') break;
+
+          if (action === 'correct') {
+            if (rule.type === 'up_down') {
+              player.correct = Number(player.correct || 0) + 1;
+            } else if (rule.type === 'divide') {
+              player.currentPoint = Number(player.currentPoint || (Number(rule.param1) || 10)) + 10;
+              player.correct = Number(player.correct || 0) + 1;
+            } else if (rule.type === 'attack_survival') {
+              player.correct = Number(player.correct || 0) + 1;
+              const damage = Number(rule.param2) || 0;
+              nextState.players = nextState.players.map(p => {
+                if (p.id === id) return p;
+                const now = Number(p.attackPoint || (Number(rule.param1) || 30));
+                return { ...p, attackPoint: Math.max(0, now - damage) };
+              });
+            } else if (rule.type === 'swedish') {
+              player.correct = Number(player.correct || 0) + 1;
+            } else if (rule.type === 'by') {
+              player.correct = Number(player.correct || 0) + 1;
+            } else if (rule.type === 'timerace') {
+              player.correct = Number(player.correct || 0) + 1;
+              player.currentPoint = Number(player.currentPoint || 0) + (Number(rule.param2) || 0);
+            } else if (rule.type === 'combo_correct') {
+              if (player.standingCorrect) {
+                player.correct = Number(player.correct || 0) + 2;
+                player.standingCorrect = false;
+              } else {
+                player.correct = Number(player.correct || 0) + 1;
+                player.standingCorrect = true;
+              }
+              nextState.players = nextState.players.map(p => p.id === id ? player : ({ ...p, standingCorrect: false }));
+            } else if (rule.type === 'combo_miss') {
+              player.correct = Number(player.correct || 0) + 1;
+              player.standingMiss = false;
+            } else {
+              player.correct = Number(player.correct || 0) + 1;
+            }
+            skipQuestionOnState(nextState);
+          }
+
+          if (action === 'miss') {
+            if (rule.type === 'up_down') {
+              player.upDownStrike = Number(player.upDownStrike || 0) + 1;
+              if (player.upDownStrike === 1) player.correct = 0;
+            } else if (rule.type === 'divide') {
+              player.miss = Number(player.miss || 0) + 1;
+              const divisor = Number(player.miss || 1);
+              const current = Number(player.currentPoint || (Number(rule.param1) || 10));
+              player.currentPoint = Math.floor(current / divisor);
+            } else if (rule.type === 'maru_rest') {
+              player.miss = Number(player.miss || 0) + 1;
+              player.pendingRest = Number(rule.param2 || 1);
+            } else if (rule.type === 'freeze') {
+              player.miss = Number(player.miss || 0) + 1;
+              player.pendingRest = Number(player.miss || 0);
+            } else if (rule.type === 'swedish') {
+              const c = Number(player.correct || 0);
+              let addMiss = 1;
+              if (c >= 1 && c <= 2) addMiss = 2;
+              else if (c >= 3 && c <= 5) addMiss = 3;
+              else if (c >= 6) addMiss = 4;
+              player.miss = Number(player.miss || 0) + addMiss;
+            } else if (rule.type === 'attack_survival') {
+              player.miss = Number(player.miss || 0) + 1;
+              const now = Number(player.attackPoint || (Number(rule.param1) || 30));
+              player.attackPoint = Math.max(0, now - (Number(rule.param3) || 0));
+            } else if (rule.type === 'by') {
+              player.miss = Number(player.miss || 0) + 1;
+              player.currentPoint = Math.max(0, Number(player.currentPoint || (Number(rule.param1) || 10)) - 1);
+            } else if (rule.type === 'timerace') {
+              player.miss = Number(player.miss || 0) + 1;
+              player.currentPoint = Number(player.currentPoint || 0) + (Number(rule.param3) || 0);
+            } else if (rule.type === 'combo_correct') {
+              player.miss = Number(player.miss || 0) + 1;
+              player.standingCorrect = false;
+            } else if (rule.type === 'combo_miss') {
+              if (player.standingMiss) {
+                player.miss = Number(player.miss || 0) + 2;
+              } else {
+                player.miss = Number(player.miss || 0) + 1;
+                player.standingMiss = true;
+              }
+            } else {
+              player.miss = Number(player.miss || 0) + 1;
+            }
+            skipQuestionOnState(nextState);
           }
           break;
         }
@@ -933,6 +1665,10 @@
       connectFirebase();
     }
 
+    if (ruleTypeSelect) applyPresetToInputs('maru_batsu');
+    setInterval(() => {
+      if ((state.ruleConfig || {}).type === 'timerace') renderTimerOnly();
+    }, 100);
     render();
     if (!isPresenter) {
       showMessage('firebaseConfig を埋めてから「Firebaseに接続」を押してください。');

@@ -502,7 +502,7 @@
       </div>
     </div>
 
-<div id="presenterView" class="presenter-main"><div class="sub" id="presenterRoomInfo" style="margin-bottom:10px;"></div>
+<div id="presenterView" class="presenter-main">
     <div class="presenter-grid">
       <div class="presenter-left">
         <div class="table-wrap">
@@ -586,8 +586,6 @@
     const copyPresenterBtn = document.getElementById('copyPresenterBtn');
     const presenterHint = document.getElementById('presenterHint');
     const roomIdInput = document.getElementById('roomIdInput');
-    const roomParam = params.get('room');
-    if (roomParam) roomIdInput.value = roomParam;
     const connectBtn = document.getElementById('connectBtn');
     const resetRemoteBtn = document.getElementById('resetRemoteBtn');
     const ruleTypeSelect = document.getElementById('ruleTypeSelect');
@@ -887,7 +885,6 @@
     function getPresenterUrl() {
       const url = new URL(location.href);
       url.searchParams.set('view', 'presenter');
-      url.searchParams.set('room', roomIdInput.value.trim() || 'quiz-room-1');
       return url.toString();
     }
 
@@ -1191,8 +1188,6 @@
         if (presenterTimerText) presenterTimerText.textContent = timerText;
       }
       renderTimerOnly();
-      const presenterRoomInfo = document.getElementById('presenterRoomInfo');
-      if (presenterRoomInfo) presenterRoomInfo.textContent = '表示用 / ルーム: ' + (roomIdInput.value.trim() || 'quiz-room-1');
       if (presenterHint) {
         presenterHint.textContent = isPresenter ? '表示専用画面' : '同じHTMLを別ウィンドウで開くと表示専用画面になります。';
       }

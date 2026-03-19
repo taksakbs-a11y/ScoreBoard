@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>クイズ得点板 2画面版</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>クイズ得点板 Firebase版</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -36,7 +36,7 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
     .panel, .main, .presenter-main { padding: 18px; }
-    .card, .question-card { padding: 14px; }
+    .card, .question-card, .mini-card { padding: 14px; }
     h1 { margin: 0 0 16px; font-size: 28px; }
     h2 { margin: 16px 0 12px; font-size: 18px; }
     .sub {
@@ -54,7 +54,7 @@
       padding: 12px;
       font-size: 14px;
     }
-    textarea { resize: vertical; min-height: 150px; }
+    textarea { resize: vertical; min-height: 120px; }
     .csv-box { min-height: 220px; font-family: ui-monospace, Consolas, monospace; }
     .row, .btns {
       display: grid;
@@ -130,14 +130,11 @@
       gap: 12px;
       margin-bottom: 16px;
     }
-    .summary.two-by-two {
-      grid-template-columns: repeat(2, 1fr);
-    }
+    .summary.two-by-two { grid-template-columns: repeat(2, 1fr); }
     .mini-card {
       background: #0b1220;
       border: 1px solid #334155;
       border-radius: 16px;
-      padding: 14px;
     }
     .table-wrap { overflow-x: auto; }
     table {
@@ -203,9 +200,16 @@
       color: #dbeafe;
       font-size: 13px;
     }
+    .config-warning {
+      border: 1px solid #7c2d12;
+      background: rgba(194, 65, 12, 0.12);
+      color: #fed7aa;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
 
     #presenterView { display: none; }
-
     body.presenter-mode #controllerView,
     body.presenter-mode .topbar .controller-only {
       display: none !important;
@@ -220,16 +224,6 @@
       grid-template-columns: 420px 1fr;
       gap: 20px;
       align-items: start;
-    }
-    .presenter-left {
-      min-width: 0;
-    }
-    .presenter-right {
-      min-width: 0;
-    }
-    .presenter-right .summary {
-      margin-top: 16px;
-      margin-bottom: 0;
     }
     .presenter-left .table-wrap {
       margin-top: 0;
@@ -247,29 +241,21 @@
       padding: 10px 8px;
     }
     body.presenter-mode .presenter-left th:nth-child(1),
-    body.presenter-mode .presenter-left td:nth-child(1) {
-      width: 52px;
-    }
+    body.presenter-mode .presenter-left td:nth-child(1) { width: 52px; }
     body.presenter-mode .presenter-left th:nth-child(2),
-    body.presenter-mode .presenter-left td:nth-child(2) {
-      width: auto;
-    }
+    body.presenter-mode .presenter-left td:nth-child(2) { width: auto; }
     body.presenter-mode .presenter-left th:nth-child(3),
     body.presenter-mode .presenter-left td:nth-child(3),
     body.presenter-mode .presenter-left th:nth-child(4),
     body.presenter-mode .presenter-left td:nth-child(4),
     body.presenter-mode .presenter-left th:nth-child(5),
-    body.presenter-mode .presenter-left td:nth-child(5) {
-      width: 72px;
-    }
+    body.presenter-mode .presenter-left td:nth-child(5) { width: 72px; }
     body.presenter-mode .presenter-left td.name {
       font-size: 16px;
       word-break: break-all;
     }
     body.presenter-mode .presenter-left td.score-big,
-    body.presenter-mode .presenter-left td.miss-big {
-      font-size: 22px;
-    }
+    body.presenter-mode .presenter-left td.miss-big { font-size: 22px; }
     body.presenter-mode .presenter-left .status {
       min-width: 0;
       padding: 4px 8px;
@@ -292,8 +278,17 @@
 
   <div id="controllerView" class="wrap">
     <div class="panel">
-      <h1>クイズ得点板</h1>
-      <div class="sub">7問正解で勝ち抜け、3問誤答で失格。操作用画面です。表示用は別ウィンドウに出せます。</div>
+      <h1>クイズ得点板 Firebase版</h1>
+      <div class="config-warning">
+        先に Firebase 設定を埋めてください。埋めていない場合は同期しません。
+      </div>
+
+      <h2>ルーム名</h2>
+      <input id="roomIdInput" value="quiz-room-1" />
+      <div class="btns">
+        <button id="connectBtn">Firebaseに接続</button>
+        <button id="resetRemoteBtn" class="danger">ルーム初期化</button>
+      </div>
 
       <h2>参加者登録</h2>
       <textarea id="playerInput" placeholder="1行に1人ずつ入力&#10;例：&#10;佐久間&#10;田中&#10;鈴木"></textarea>
@@ -306,11 +301,11 @@
       <div class="row">
         <div>
           <div class="sub" style="margin:0 0 6px;">勝ち抜け正解数</div>
-          <input id="winScore" type="number" value="7" min="1">
+          <input id="winScore" type="number" value="7" min="1" />
         </div>
         <div>
           <div class="sub" style="margin:0 0 6px;">失格誤答数</div>
-          <input id="loseMiss" type="number" value="3" min="1">
+          <input id="loseMiss" type="number" value="3" min="1" />
         </div>
       </div>
       <div class="btns">
@@ -323,14 +318,14 @@
       </div>
 
       <h2>問題CSV</h2>
-      <div class="sub">形式：番号,問題,答え,解説<br>1行目は見出しでもOKです。改行を含むセルにも対応しています。</div>
+      <div class="sub">形式：番号,問題,答え,解説</div>
       <textarea id="csvInput" class="csv-box" placeholder="番号,問題,答え,解説&#10;1,夏目漱石の『こころ』で先生が遺書を託した相手は誰？,私,物語は先生の遺書という形で過去が明かされる。"></textarea>
       <div class="btns">
         <button id="loadCsvBtn">CSVを読み込む</button>
         <button id="sampleBtn" class="secondary">サンプル読込</button>
       </div>
 
-      <div class="footer">ページ再読み込みで状態は消えます。表示用ウィンドウとは自動同期します。</div>
+      <div class="footer">観客用は ?view=presenter を付けたURLを配布します。</div>
     </div>
 
     <div class="main">
@@ -353,7 +348,7 @@
         <div class="summary">
           <div class="mini-card"><div class="label">参加者数</div><div id="ctrlTotalPlayers" class="value">0</div></div>
           <div class="mini-card"><div class="label">進行中</div><div id="ctrlPlayingCount" class="value">0</div></div>
-          <div class="mini-card"><div class="label">勝ち抜け</div><div id="ctrlWinCount" class="value">0</div></div>
+          <div class="mini-card"><div class="label">勝抜</div><div id="ctrlWinCount" class="value">0</div></div>
           <div class="mini-card"><div class="label">失格</div><div id="ctrlLoseCount" class="value">0</div></div>
         </div>
 
@@ -411,7 +406,7 @@
           <div class="summary two-by-two">
             <div class="mini-card"><div class="label">参加者数</div><div id="presenterTotalPlayers" class="value">0</div></div>
             <div class="mini-card"><div class="label">進行中</div><div id="presenterPlayingCount" class="value">0</div></div>
-            <div class="mini-card"><div class="label">勝ち抜け</div><div id="presenterWinCount" class="value">0</div></div>
+            <div class="mini-card"><div class="label">勝抜</div><div id="presenterWinCount" class="value">0</div></div>
             <div class="mini-card"><div class="label">失格</div><div id="presenterLoseCount" class="value">0</div></div>
           </div>
         </div>
@@ -419,513 +414,507 @@
     </div>
   </div>
 
-  <script>
-    (function () {
-      'use strict';
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "AIzaSyDdRTfcxOanifQtFQ3pbTEOYn9HNhIzwx0",
+      authDomain: "scoreboard-74fbb.firebaseapp.com",
+      databaseURL: "https://scoreboard-74fbb-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "scoreboard-74fbb",
+      storageBucket: "scoreboard-74fbb.firebasestorage.app",
+      messagingSenderId: "228755602601",
+      appId: "1:228755602601:web:2935fe35e9dd5a4265bdb8",
+      measurementId: "G-8HEYQY19L8"
+    };
 
-      var STORAGE_KEY = 'quiz_scoreboard_dual_display_static_v1';
-      var params = new URLSearchParams(location.search);
-      var isPresenter = params.get('view') === 'presenter';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, get, remove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-      var playerInput = document.getElementById('playerInput');
-      var setPlayersBtn = document.getElementById('setPlayersBtn');
-      var resetAllBtn = document.getElementById('resetAllBtn');
-      var applyRuleBtn = document.getElementById('applyRuleBtn');
-      var undoBtn = document.getElementById('undoBtn');
-      var rankModeBtn = document.getElementById('rankModeBtn');
-      var inputOrderBtn = document.getElementById('inputOrderBtn');
-      var sampleBtn = document.getElementById('sampleBtn');
-      var winScoreInput = document.getElementById('winScore');
-      var loseMissInput = document.getElementById('loseMiss');
-      var csvInput = document.getElementById('csvInput');
-      var loadCsvBtn = document.getElementById('loadCsvBtn');
-      var messageBox = document.getElementById('messageBox');
-      var openPresenterBtn = document.getElementById('openPresenterBtn');
-      var copyPresenterBtn = document.getElementById('copyPresenterBtn');
-      var presenterHint = document.getElementById('presenterHint');
+    const params = new URLSearchParams(location.search);
+    const isPresenter = params.get('view') === 'presenter';
+    if (isPresenter) {
+      document.body.classList.add('presenter-mode');
+      document.title = 'クイズ表示用';
+    }
 
-      var players = [];
-      var winScore = 7;
-      var loseMiss = 3;
-      var history = [];
-      var questions = [];
-      var currentQuestionIndex = 0;
-      var lastJudgedIndex = -1;
-      var presenterRanked = false;
+    const playerInput = document.getElementById('playerInput');
+    const setPlayersBtn = document.getElementById('setPlayersBtn');
+    const resetAllBtn = document.getElementById('resetAllBtn');
+    const applyRuleBtn = document.getElementById('applyRuleBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const rankModeBtn = document.getElementById('rankModeBtn');
+    const inputOrderBtn = document.getElementById('inputOrderBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const winScoreInput = document.getElementById('winScore');
+    const loseMissInput = document.getElementById('loseMiss');
+    const csvInput = document.getElementById('csvInput');
+    const loadCsvBtn = document.getElementById('loadCsvBtn');
+    const messageBox = document.getElementById('messageBox');
+    const openPresenterBtn = document.getElementById('openPresenterBtn');
+    const copyPresenterBtn = document.getElementById('copyPresenterBtn');
+    const presenterHint = document.getElementById('presenterHint');
+    const roomIdInput = document.getElementById('roomIdInput');
+    const connectBtn = document.getElementById('connectBtn');
+    const resetRemoteBtn = document.getElementById('resetRemoteBtn');
 
-      function showMessage(text) {
-        if (isPresenter) return;
-        if (!text) {
-          messageBox.style.display = 'none';
-          messageBox.textContent = '';
-          return;
-        }
-        messageBox.textContent = text;
-        messageBox.style.display = 'block';
+    let app = null;
+    let db = null;
+    let roomRef = null;
+
+    let state = {
+      players: [],
+      winScore: 7,
+      loseMiss: 3,
+      questions: [],
+      currentQuestionIndex: 0,
+      lastJudgedIndex: -1,
+      presenterRanked: false,
+      playerInput: '',
+      csvInput: ''
+    };
+
+    const localHistory = [];
+
+    function configured() {
+      return Object.values(firebaseConfig).every(v => v && !String(v).includes('REPLACE_ME'));
+    }
+
+    function showMessage(text) {
+      if (isPresenter) return;
+      if (!text) {
+        messageBox.style.display = 'none';
+        messageBox.textContent = '';
+        return;
       }
+      messageBox.textContent = text;
+      messageBox.style.display = 'block';
+    }
 
-      function getPresenterUrl() {
-        var url = new URL(location.href);
-        url.searchParams.set('view', 'presenter');
-        return url.toString();
-      }
+    function getPresenterUrl() {
+      const url = new URL(location.href);
+      url.searchParams.set('view', 'presenter');
+      return url.toString();
+    }
 
-      function getBaseStatus(player) {
-        if (player.correct >= winScore) return '勝抜';
-        if (player.miss >= loseMiss) return '失格';
-        return '進行中';
-      }
+    function getStatus(player) {
+      if (player.correct >= state.winScore) return '勝抜';
+      if (player.miss >= state.loseMiss) return '失格';
+      if (state.presenterRanked) return '判定';
+      return '進行中';
+    }
 
-      function getStatus(player) {
-        var base = getBaseStatus(player);
-        if (base !== '進行中') return base;
-        if (presenterRanked) return '判定';
-        return '進行中';
-      }
+    function getStatusClass(status) {
+      if (status === '勝抜') return 'win';
+      if (status === '失格') return 'lose';
+      return 'playing';
+    }
 
-      function getStatusClass(status) {
-        if (status === '勝抜') return 'win';
-        if (status === '失格') return 'lose';
-        if (status === '判定') return 'playing';
-        return 'playing';
-      }
+    function clonePlayers(list) {
+      return list.map(player => ({ ...player }));
+    }
 
-      function clonePlayers(list) {
-        return list.map(function (player) {
-          return {
-            id: player.id,
-            name: player.name,
-            correct: player.correct,
-            miss: player.miss,
-            inputOrder: player.inputOrder
-          };
-        });
-      }
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let current = '';
+      let inQuotes = false;
 
-      function saveState() {
-        var state = {
-          players: players,
-          winScore: winScore,
-          loseMiss: loseMiss,
-          questions: questions,
-          currentQuestionIndex: currentQuestionIndex,
-          lastJudgedIndex: lastJudgedIndex,
-          presenterRanked: presenterRanked,
-          playerInput: playerInput ? playerInput.value : '',
-          csvInput: csvInput ? csvInput.value : ''
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      }
-
-      function loadState() {
-        var raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        try {
-          var state = JSON.parse(raw);
-          players = Array.isArray(state.players) ? state.players : [];
-          winScore = Number(state.winScore) || 7;
-          loseMiss = Number(state.loseMiss) || 3;
-          questions = Array.isArray(state.questions) ? state.questions : [];
-          currentQuestionIndex = Number(state.currentQuestionIndex) || 0;
-          lastJudgedIndex = typeof state.lastJudgedIndex === 'number' ? state.lastJudgedIndex : -1;
-          presenterRanked = !!state.presenterRanked;
-          if (playerInput) playerInput.value = state.playerInput || '';
-          if (csvInput) csvInput.value = state.csvInput || '';
-          if (winScoreInput) winScoreInput.value = String(winScore);
-          if (loseMissInput) loseMissInput.value = String(loseMiss);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      function pushHistory() {
-        history.push({
-          players: clonePlayers(players),
-          currentQuestionIndex: currentQuestionIndex,
-          lastJudgedIndex: lastJudgedIndex,
-          presenterRanked: presenterRanked
-        });
-        if (history.length > 100) history.shift();
-      }
-
-      function undoLast() {
-        var snapshot = history.pop();
-        if (!snapshot) {
-          showMessage('戻せる操作がありません。');
-          return;
-        }
-        players = clonePlayers(snapshot.players);
-        currentQuestionIndex = snapshot.currentQuestionIndex;
-        lastJudgedIndex = snapshot.lastJudgedIndex;
-        presenterRanked = !!snapshot.presenterRanked;
-        saveState();
-        render();
-        showMessage('ひとつ前の状態に戻しました。');
-      }
-
-      function parseCSV(text) {
-        var rows = [];
-        var row = [];
-        var current = '';
-        var inQuotes = false;
-        var i, ch, next;
-
-        for (i = 0; i < text.length; i++) {
-          ch = text.charAt(i);
-          next = text.charAt(i + 1);
-
-          if (ch === '"') {
-            if (inQuotes && next === '"') {
-              current += '"';
-              i++;
-            } else {
-              inQuotes = !inQuotes;
-            }
-          } else if (ch === ',' && !inQuotes) {
-            row.push(current);
-            current = '';
-          } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
-            if (ch === '\r' && next === '\n') i++;
-            row.push(current);
-            if (row.join('').trim() !== '') rows.push(row);
-            row = [];
-            current = '';
+      for (let i = 0; i < text.length; i++) {
+        const ch = text.charAt(i);
+        const next = text.charAt(i + 1);
+        if (ch === '"') {
+          if (inQuotes && next === '"') {
+            current += '"';
+            i++;
           } else {
-            current += ch;
+            inQuotes = !inQuotes;
           }
-        }
-
-        row.push(current);
-        if (row.join('').trim() !== '') rows.push(row);
-        return rows;
-      }
-
-      function cleanCell(value) {
-        if (value == null) return '';
-        var v = String(value).trim();
-        if (v.length >= 2 && v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') {
-          v = v.slice(1, -1);
-        }
-        return v.replace(/""/g, '"');
-      }
-
-      function getDisplayPlayers(forPresenter) {
-        var list = clonePlayers(players);
-        if (forPresenter && presenterRanked) {
-          list.sort(function (a, b) {
-            var order = { '勝抜': 0, '進行中': 1, '判定': 1, '失格': 2 };
-            var sa = getStatus(a);
-            var sb = getStatus(b);
-            if (order[sa] !== order[sb]) return order[sa] - order[sb];
-            if (b.correct !== a.correct) return b.correct - a.correct;
-            if (a.miss !== b.miss) return a.miss - b.miss;
-            return a.name.localeCompare(b.name, 'ja');
-          });
+        } else if (ch === ',' && !inQuotes) {
+          row.push(current);
+          current = '';
+        } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+          if (ch === '\r' && next === '\n') i++;
+          row.push(current);
+          if (row.join('').trim() !== '') rows.push(row);
+          row = [];
+          current = '';
         } else {
-          list.sort(function (a, b) {
-            return (a.inputOrder || 0) - (b.inputOrder || 0);
-          });
-        }
-        return list;
-      }
-
-      function renderQuestionSection(prefix) {
-        var titleEl = document.getElementById(prefix + 'LastJudgedTitle');
-        var progressEl = document.getElementById(prefix + 'QuestionProgress');
-        var questionEl = document.getElementById(prefix + 'LastJudgedQuestion');
-        var answerEl = document.getElementById(prefix + 'AnswerBox');
-        var explanationEl = document.getElementById(prefix + 'ExplanationBox');
-
-        if (questions.length === 0) {
-          progressEl.textContent = '0 / 0';
-          titleEl.textContent = 'まだありません';
-          questionEl.textContent = '正解または誤答を押すと、直前の問題・答え・解説がここに出ます。';
-          answerEl.textContent = '答え：';
-          explanationEl.textContent = '解説：';
-          return;
-        }
-
-        progressEl.textContent = (Math.min(currentQuestionIndex + 1, questions.length)) + ' / ' + questions.length;
-
-        if (lastJudgedIndex < 0 || !questions[lastJudgedIndex]) {
-          titleEl.textContent = 'まだありません';
-          questionEl.textContent = '正解または誤答を押すと、直前の問題・答え・解説がここに出ます。';
-          answerEl.textContent = '答え：';
-          explanationEl.textContent = '解説：';
-          return;
-        }
-
-        var q = questions[lastJudgedIndex];
-        titleEl.textContent = '第' + q.number + '問';
-        questionEl.textContent = q.question || '';
-        answerEl.textContent = '答え：' + (q.answer || '');
-        explanationEl.textContent = '解説：' + (q.explanation || '');
-      }
-
-      function renderSummary(prefix, displayPlayers) {
-        var playing = 0, win = 0, lose = 0, i, status;
-        for (i = 0; i < displayPlayers.length; i++) {
-          status = getStatus(displayPlayers[i]);
-          if (status === '進行中') playing++;
-          if (status === '勝抜') win++;
-          if (status === '失格') lose++;
-        }
-        document.getElementById(prefix + 'TotalPlayers').textContent = String(displayPlayers.length);
-        document.getElementById(prefix + 'PlayingCount').textContent = String(playing);
-        document.getElementById(prefix + 'WinCount').textContent = String(win);
-        document.getElementById(prefix + 'LoseCount').textContent = String(lose);
-      }
-
-      function renderTable(tbodyId, forPresenter) {
-        var tbody = document.getElementById(tbodyId);
-        var displayPlayers = getDisplayPlayers(forPresenter);
-        var i, player, status, tr, nameTd, statusClass;
-
-        tbody.innerHTML = '';
-
-        for (i = 0; i < displayPlayers.length; i++) {
-          player = displayPlayers[i];
-          status = getStatus(player);
-          statusClass = getStatusClass(status);
-
-          tr = document.createElement('tr');
-          if (status === '勝抜') tr.className = 'win';
-          if (status === '失格') tr.className = 'lose';
-
-          tr.innerHTML =
-            '<td>' + (i + 1) + '</td>' +
-            '<td class="name"></td>' +
-            '<td class="score-big">' + player.correct + '</td>' +
-            '<td class="miss-big">' + player.miss + '</td>' +
-            '<td><span class="status ' + statusClass + '">' + status + '</span></td>' +
-            (forPresenter ? '' :
-              '<td>' +
-              '<button class="small success" data-action="correct" data-id="' + player.id + '">正解+1</button> ' +
-              '<button class="small danger" data-action="miss" data-id="' + player.id + '">誤答+1</button> ' +
-              '<button class="small secondary" data-action="resetRow" data-id="' + player.id + '">その人をリセット</button>' +
-              '</td>');
-
-          nameTd = tr.querySelector('.name');
-          if (nameTd) nameTd.textContent = player.name;
-          tbody.appendChild(tr);
-        }
-
-        return displayPlayers;
-      }
-
-      function render() {
-        var controllerPlayers = renderTable('ctrlScoreTableBody', false);
-        var presenterPlayers = renderTable('presenterScoreTableBody', true);
-
-        renderQuestionSection('ctrl');
-        renderQuestionSection('presenter');
-
-        renderSummary('ctrl', controllerPlayers);
-        renderSummary('presenter', presenterPlayers);
-
-        if (presenterHint) {
-          presenterHint.textContent = isPresenter ? '表示専用画面' : '同じHTMLを別ウィンドウで開くと表示専用画面になります。';
+          current += ch;
         }
       }
+      row.push(current);
+      if (row.join('').trim() !== '') rows.push(row);
+      return rows;
+    }
 
-      function setPlayersFromInput() {
-        var names = playerInput.value.split(/\r?\n/);
-        var nextPlayers = [];
-        var i, name;
-
-        for (i = 0; i < names.length; i++) {
-          name = names[i].trim();
-          if (name) {
-            nextPlayers.push({
-              id: 'p_' + Date.now() + '_' + i + '_' + Math.floor(Math.random() * 1000000),
-              name: name,
-              correct: 0,
-              miss: 0,
-              inputOrder: nextPlayers.length
-            });
-          }
-        }
-
-        players = nextPlayers;
-        history = [];
-        saveState();
-        render();
-        showMessage(players.length + '人の参加者を反映しました。');
+    function cleanCell(value) {
+      if (value == null) return '';
+      let v = String(value).trim();
+      if (v.length >= 2 && v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') {
+        v = v.slice(1, -1);
       }
+      return v.replace(/""/g, '"');
+    }
 
-      function applyRules() {
-        var nextWin = Number(winScoreInput.value);
-        var nextLose = Number(loseMissInput.value);
-        if (nextWin >= 1) winScore = nextWin;
-        if (nextLose >= 1) loseMiss = nextLose;
-        saveState();
-        render();
-        showMessage('ルールを反映しました。');
-      }
-
-      function loadQuestionsFromCsv() {
-        var text = csvInput.value;
-        var rows, header, startIndex, i, row;
-        var nextQuestions = [];
-
-        if (!text.trim()) {
-          questions = [];
-          currentQuestionIndex = 0;
-          lastJudgedIndex = -1;
-          saveState();
-          render();
-          showMessage('CSVが空です。');
-          return;
-        }
-
-        rows = parseCSV(text);
-        if (!rows.length) {
-          showMessage('CSVを読み取れませんでした。');
-          return;
-        }
-
-        header = rows[0].map(cleanCell);
-        startIndex = 0;
-        if ((header[0] || '') === '番号' || (header[1] || '') === '問題') {
-          startIndex = 1;
-        }
-
-        for (i = startIndex; i < rows.length; i++) {
-          row = rows[i];
-          if (!row || row.length < 3) continue;
-          nextQuestions.push({
-            number: cleanCell(row[0]) || String(nextQuestions.length + 1),
-            question: cleanCell(row[1]),
-            answer: cleanCell(row[2]),
-            explanation: cleanCell(row[3])
-          });
-        }
-
-        questions = nextQuestions;
-        currentQuestionIndex = 0;
-        lastJudgedIndex = -1;
-        saveState();
-        render();
-        showMessage(questions.length + '問を読み込みました。');
-      }
-
-      function judgeCurrentQuestion() {
-        if (!questions.length) return;
-        lastJudgedIndex = currentQuestionIndex;
-        if (currentQuestionIndex < questions.length - 1) {
-          currentQuestionIndex += 1;
-        }
-      }
-
-      function bindControllerEvents() {
-        setPlayersBtn.addEventListener('click', setPlayersFromInput);
-
-        resetAllBtn.addEventListener('click', function () {
-          pushHistory();
-          players = players.map(function (player) {
-            return {
-              id: player.id,
-              name: player.name,
-              correct: 0,
-              miss: 0,
-              inputOrder: player.inputOrder
-            };
-          });
-          presenterRanked = false;
-          saveState();
-          render();
-          showMessage('全員の得点をリセットしました。');
+    function getDisplayPlayers(forPresenter) {
+      const list = clonePlayers(state.players);
+      if (forPresenter && state.presenterRanked) {
+        list.sort((a, b) => {
+          const order = { '勝抜': 0, '進行中': 1, '判定': 1, '失格': 2 };
+          const sa = getStatus(a);
+          const sb = getStatus(b);
+          if (order[sa] !== order[sb]) return order[sa] - order[sb];
+          if (b.correct !== a.correct) return b.correct - a.correct;
+          if (a.miss !== b.miss) return a.miss - b.miss;
+          return a.name.localeCompare(b.name, 'ja');
         });
+      } else {
+        list.sort((a, b) => (a.inputOrder || 0) - (b.inputOrder || 0));
+      }
+      return list;
+    }
 
-        applyRuleBtn.addEventListener('click', applyRules);
-        undoBtn.addEventListener('click', undoLast);
+    function renderQuestionSection(prefix) {
+      const titleEl = document.getElementById(prefix + 'LastJudgedTitle');
+      const progressEl = document.getElementById(prefix + 'QuestionProgress');
+      const questionEl = document.getElementById(prefix + 'LastJudgedQuestion');
+      const answerEl = document.getElementById(prefix + 'AnswerBox');
+      const explanationEl = document.getElementById(prefix + 'ExplanationBox');
 
-        rankModeBtn.addEventListener('click', function () {
-          pushHistory();
-          presenterRanked = true;
-          saveState();
-          render();
-          showMessage('表示用を順位表示にしました。');
+      if (state.questions.length === 0) {
+        progressEl.textContent = '0 / 0';
+        titleEl.textContent = 'まだありません';
+        questionEl.textContent = '正解または誤答を押すと、直前の問題・答え・解説がここに出ます。';
+        answerEl.textContent = '答え：';
+        explanationEl.textContent = '解説：';
+        return;
+      }
+
+      progressEl.textContent = `${Math.min(state.currentQuestionIndex + 1, state.questions.length)} / ${state.questions.length}`;
+
+      if (state.lastJudgedIndex < 0 || !state.questions[state.lastJudgedIndex]) {
+        titleEl.textContent = 'まだありません';
+        questionEl.textContent = '正解または誤答を押すと、直前の問題・答え・解説がここに出ます。';
+        answerEl.textContent = '答え：';
+        explanationEl.textContent = '解説：';
+        return;
+      }
+
+      const q = state.questions[state.lastJudgedIndex];
+      titleEl.textContent = `第${q.number}問`;
+      questionEl.textContent = q.question || '';
+      answerEl.textContent = `答え：${q.answer || ''}`;
+      explanationEl.textContent = `解説：${q.explanation || ''}`;
+    }
+
+    function renderSummary(prefix, displayPlayers) {
+      let playing = 0, win = 0, lose = 0;
+      displayPlayers.forEach(player => {
+        const status = getStatus(player);
+        if (status === '進行中') playing++;
+        if (status === '勝抜') win++;
+        if (status === '失格') lose++;
+      });
+      document.getElementById(prefix + 'TotalPlayers').textContent = String(displayPlayers.length);
+      document.getElementById(prefix + 'PlayingCount').textContent = String(playing);
+      document.getElementById(prefix + 'WinCount').textContent = String(win);
+      document.getElementById(prefix + 'LoseCount').textContent = String(lose);
+    }
+
+    function renderTable(tbodyId, forPresenter) {
+      const tbody = document.getElementById(tbodyId);
+      const displayPlayers = getDisplayPlayers(forPresenter);
+      tbody.innerHTML = '';
+
+      displayPlayers.forEach((player, i) => {
+        const status = getStatus(player);
+        const statusClass = getStatusClass(status);
+        const tr = document.createElement('tr');
+        if (status === '勝抜') tr.className = 'win';
+        if (status === '失格') tr.className = 'lose';
+
+        tr.innerHTML =
+          `<td>${i + 1}</td>` +
+          `<td class="name"></td>` +
+          `<td class="score-big">${player.correct}</td>` +
+          `<td class="miss-big">${player.miss}</td>` +
+          `<td><span class="status ${statusClass}">${status}</span></td>` +
+          (forPresenter ? '' :
+            `<td>
+              <button class="small success" data-action="correct" data-id="${player.id}">正解+1</button>
+              <button class="small danger" data-action="miss" data-id="${player.id}">誤答+1</button>
+              <button class="small secondary" data-action="resetRow" data-id="${player.id}">その人をリセット</button>
+            </td>`);
+
+        tr.querySelector('.name').textContent = player.name;
+        tbody.appendChild(tr);
+      });
+
+      return displayPlayers;
+    }
+
+    function render() {
+      const controllerPlayers = renderTable('ctrlScoreTableBody', false);
+      const presenterPlayers = renderTable('presenterScoreTableBody', true);
+
+      renderQuestionSection('ctrl');
+      renderQuestionSection('presenter');
+
+      renderSummary('ctrl', controllerPlayers);
+      renderSummary('presenter', presenterPlayers);
+
+      if (playerInput) playerInput.value = state.playerInput || '';
+      if (csvInput) csvInput.value = state.csvInput || '';
+      if (winScoreInput) winScoreInput.value = String(state.winScore);
+      if (loseMissInput) loseMissInput.value = String(state.loseMiss);
+      if (presenterHint) {
+        presenterHint.textContent = isPresenter ? '表示専用画面' : '同じHTMLを別ウィンドウで開くと表示専用画面になります。';
+      }
+    }
+
+    async function setRemoteState(next) {
+      if (!roomRef) {
+        showMessage('先に Firebase に接続してください。');
+        return;
+      }
+      state = next;
+      await set(roomRef, state);
+    }
+
+    function pushHistory() {
+      localHistory.push(JSON.parse(JSON.stringify(state)));
+      if (localHistory.length > 100) localHistory.shift();
+    }
+
+    async function undoLast() {
+      const snapshot = localHistory.pop();
+      if (!snapshot) {
+        showMessage('戻せる操作がありません。');
+        return;
+      }
+      await setRemoteState(snapshot);
+      showMessage('ひとつ前の状態に戻しました。');
+    }
+
+    function buildPlayersFromInput() {
+      const names = playerInput.value.split(/\r?\n/);
+      const players = [];
+      names.forEach(name => {
+        const n = name.trim();
+        if (!n) return;
+        players.push({
+          id: 'p_' + Date.now() + '_' + players.length + '_' + Math.floor(Math.random() * 1000000),
+          name: n,
+          correct: 0,
+          miss: 0,
+          inputOrder: players.length
         });
+      });
+      return players;
+    }
 
-        inputOrderBtn.addEventListener('click', function () {
-          pushHistory();
-          presenterRanked = false;
-          saveState();
-          render();
-          showMessage('表示用を入力順表示にしました。');
-        });
-
-        loadCsvBtn.addEventListener('click', loadQuestionsFromCsv);
-
-        sampleBtn.addEventListener('click', function () {
-          csvInput.value = '番号,問題,答え,解説\n1,"夏目漱石の『こころ』で先生が遺書を託した相手は誰？",私,"物語は先生の遺書という形で過去が明かされる。"\n2,"日本で最も面積が大きい都道府県はどこ？",北海道,"一般的な答えは北海道。"\n3,"元素記号 Na で表される元素は何？",ナトリウム,"ラテン語名 natrium に由来する。"';
-          showMessage('サンプルCSVを入れました。「CSVを読み込む」を押してください。');
-        });
-
-        openPresenterBtn.addEventListener('click', function () {
-          window.open(getPresenterUrl(), '_blank');
-        });
-
-        copyPresenterBtn.addEventListener('click', async function () {
-          var url = getPresenterUrl();
-          try {
-            await navigator.clipboard.writeText(url);
-            showMessage('表示用URLをコピーしました。');
-          } catch (e) {
-            showMessage(url);
-          }
-        });
-
-        document.getElementById('ctrlScoreTableBody').addEventListener('click', function (e) {
-          var button = e.target.closest('button');
-          var id, action, i, player;
-          if (!button) return;
-
-          id = button.getAttribute('data-id');
-          action = button.getAttribute('data-action');
-          pushHistory();
-
-          for (i = 0; i < players.length; i++) {
-            player = players[i];
-            if (player.id === id) {
-              if (action === 'correct' && getBaseStatus(player) === '進行中') {
-                player.correct += 1;
-                judgeCurrentQuestion();
-              }
-              if (action === 'miss' && getBaseStatus(player) === '進行中') {
-                player.miss += 1;
-                judgeCurrentQuestion();
-              }
-              if (action === 'resetRow') {
-                player.correct = 0;
-                player.miss = 0;
-              }
-              break;
-            }
-          }
-
-          saveState();
-          render();
+    function buildQuestionsFromCsv(text) {
+      const rows = parseCSV(text);
+      if (!rows.length) return [];
+      const header = rows[0].map(cleanCell);
+      let startIndex = 0;
+      if ((header[0] || '') === '番号' || (header[1] || '') === '問題') startIndex = 1;
+      const nextQuestions = [];
+      for (let i = startIndex; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length < 3) continue;
+        nextQuestions.push({
+          number: cleanCell(row[0]) || String(nextQuestions.length + 1),
+          question: cleanCell(row[1]),
+          answer: cleanCell(row[2]),
+          explanation: cleanCell(row[3])
         });
       }
+      return nextQuestions;
+    }
 
-      window.addEventListener('storage', function (e) {
-        if (e.key !== STORAGE_KEY) return;
-        loadState();
+    function judgeCurrentQuestionOnState(nextState) {
+      if (!nextState.questions.length) return nextState;
+      nextState.lastJudgedIndex = nextState.currentQuestionIndex;
+      if (nextState.currentQuestionIndex < nextState.questions.length - 1) {
+        nextState.currentQuestionIndex += 1;
+      }
+      return nextState;
+    }
+
+    async function connectFirebase() {
+      if (!configured()) {
+        showMessage('firebaseConfig を先に埋めてください。');
+        return;
+      }
+      if (!app) {
+        app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+      }
+      const roomId = roomIdInput.value.trim() || 'quiz-room-1';
+      roomRef = ref(db, 'rooms/' + roomId);
+
+      const snap = await get(roomRef);
+      if (!snap.exists() && !isPresenter) {
+        await set(roomRef, state);
+      }
+
+      onValue(roomRef, (snapshot) => {
+        const val = snapshot.val();
+        if (!val) return;
+        state = {
+          players: Array.isArray(val.players) ? val.players : [],
+          winScore: Number(val.winScore) || 7,
+          loseMiss: Number(val.loseMiss) || 3,
+          questions: Array.isArray(val.questions) ? val.questions : [],
+          currentQuestionIndex: Number(val.currentQuestionIndex) || 0,
+          lastJudgedIndex: typeof val.lastJudgedIndex === 'number' ? val.lastJudgedIndex : -1,
+          presenterRanked: !!val.presenterRanked,
+          playerInput: val.playerInput || '',
+          csvInput: val.csvInput || ''
+        };
         render();
       });
 
-      if (isPresenter) {
-        document.body.classList.add('presenter-mode');
-        document.title = 'クイズ表示用';
-      }
+      showMessage(`Firebaseに接続しました。ルーム: ${roomId}`);
+    }
 
-      loadState();
-      if (!isPresenter) bindControllerEvents();
-      render();
-      if (!isPresenter) showMessage('まずは参加者入力かCSV読込をしてください。');
-    })();
+    if (!isPresenter) {
+      setPlayersBtn.addEventListener('click', async () => {
+        pushHistory();
+        const next = { ...state, players: buildPlayersFromInput(), playerInput: playerInput.value };
+        await setRemoteState(next);
+        showMessage('参加者を反映しました。');
+      });
+
+      resetAllBtn.addEventListener('click', async () => {
+        pushHistory();
+        const next = {
+          ...state,
+          players: state.players.map(p => ({ ...p, correct: 0, miss: 0 }))
+        };
+        await setRemoteState(next);
+        showMessage('全員の得点をリセットしました。');
+      });
+
+      applyRuleBtn.addEventListener('click', async () => {
+        pushHistory();
+        const next = {
+          ...state,
+          winScore: Number(winScoreInput.value) || 7,
+          loseMiss: Number(loseMissInput.value) || 3
+        };
+        await setRemoteState(next);
+        showMessage('ルールを反映しました。');
+      });
+
+      undoBtn.addEventListener('click', undoLast);
+
+      rankModeBtn.addEventListener('click', async () => {
+        pushHistory();
+        await setRemoteState({ ...state, presenterRanked: true });
+        showMessage('表示用を順位表示にしました。');
+      });
+
+      inputOrderBtn.addEventListener('click', async () => {
+        pushHistory();
+        await setRemoteState({ ...state, presenterRanked: false });
+        showMessage('表示用を入力順表示にしました。');
+      });
+
+      loadCsvBtn.addEventListener('click', async () => {
+        pushHistory();
+        const next = {
+          ...state,
+          questions: buildQuestionsFromCsv(csvInput.value),
+          currentQuestionIndex: 0,
+          lastJudgedIndex: -1,
+          csvInput: csvInput.value
+        };
+        await setRemoteState(next);
+        showMessage('CSVを読み込みました。');
+      });
+
+      sampleBtn.addEventListener('click', () => {
+        csvInput.value = '番号,問題,答え,解説\n1,"夏目漱石の『こころ』で先生が遺書を託した相手は誰？",私,"物語は先生の遺書という形で過去が明かされる。"\n2,"日本で最も面積が大きい都道府県はどこ？",北海道,"一般的な答えは北海道。"\n3,"元素記号 Na で表される元素は何？",ナトリウム,"ラテン語名 natrium に由来する。"';
+        showMessage('サンプルCSVを入れました。「CSVを読み込む」を押してください。');
+      });
+
+      connectBtn.addEventListener('click', connectFirebase);
+
+      resetRemoteBtn.addEventListener('click', async () => {
+        if (!roomRef) {
+          showMessage('先に Firebase に接続してください。');
+          return;
+        }
+        await remove(roomRef);
+        state = {
+          players: [],
+          winScore: 7,
+          loseMiss: 3,
+          questions: [],
+          currentQuestionIndex: 0,
+          lastJudgedIndex: -1,
+          presenterRanked: false,
+          playerInput: '',
+          csvInput: ''
+        };
+        render();
+        showMessage('ルームを初期化しました。');
+      });
+
+      openPresenterBtn.addEventListener('click', () => {
+        window.open(getPresenterUrl(), '_blank');
+      });
+
+      copyPresenterBtn.addEventListener('click', async () => {
+        const url = getPresenterUrl();
+        try {
+          await navigator.clipboard.writeText(url);
+          showMessage('表示用URLをコピーしました。');
+        } catch {
+          showMessage(url);
+        }
+      });
+
+      document.getElementById('ctrlScoreTableBody').addEventListener('click', async (e) => {
+        const button = e.target.closest('button');
+        if (!button) return;
+
+        const id = button.getAttribute('data-id');
+        const action = button.getAttribute('data-action');
+        const nextState = JSON.parse(JSON.stringify(state));
+        pushHistory();
+
+        for (let i = 0; i < nextState.players.length; i++) {
+          const player = nextState.players[i];
+          if (player.id !== id) continue;
+
+          if (action === 'correct' && getStatus(player) === '進行中') {
+            player.correct += 1;
+            judgeCurrentQuestionOnState(nextState);
+          }
+          if (action === 'miss' && getStatus(player) === '進行中') {
+            player.miss += 1;
+            judgeCurrentQuestionOnState(nextState);
+          }
+          if (action === 'resetRow') {
+            player.correct = 0;
+            player.miss = 0;
+          }
+          break;
+        }
+
+        await setRemoteState(nextState);
+      });
+    } else {
+      connectBtn?.remove();
+      connectFirebase();
+    }
+
+    render();
+    if (!isPresenter) {
+      showMessage('firebaseConfig を埋めてから「Firebaseに接続」を押してください。');
+    }
   </script>
 </body>
 </html>

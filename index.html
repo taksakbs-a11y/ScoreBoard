@@ -495,9 +495,15 @@
       return url.toString();
     }
 
-    function getStatus(player) {
+    function getBaseStatus(player) {
       if (player.correct >= state.winScore) return '勝抜';
       if (player.miss >= state.loseMiss) return '失格';
+      return '進行中';
+    }
+
+    function getStatus(player) {
+      const base = getBaseStatus(player);
+      if (base !== '進行中') return base;
       if (state.presenterRanked) return '判定';
       return '進行中';
     }
@@ -790,7 +796,8 @@
         pushHistory();
         const next = {
           ...state,
-          players: state.players.map(p => ({ ...p, correct: 0, miss: 0 }))
+          players: state.players.map(p => ({ ...p, correct: 0, miss: 0 })),
+          presenterRanked: false
         };
         await setRemoteState(next);
         showMessage('全員の得点をリセットしました。');
@@ -889,11 +896,11 @@
           const player = nextState.players[i];
           if (player.id !== id) continue;
 
-          if (action === 'correct' && getStatus(player) === '進行中') {
+          if (action === 'correct' && getBaseStatus(player) === '進行中') {
             player.correct += 1;
             judgeCurrentQuestionOnState(nextState);
           }
-          if (action === 'miss' && getStatus(player) === '進行中') {
+          if (action === 'miss' && getBaseStatus(player) === '進行中') {
             player.miss += 1;
             judgeCurrentQuestionOnState(nextState);
           }

@@ -831,10 +831,10 @@
               inputOrder: player.inputOrder
             };
           });
+          presenterRanked = false;
           saveState();
           render();
-          presenterRanked = false;
-      showMessage('全員の得点をリセットしました。');
+          showMessage('全員の得点をリセットしました。');
         });
 
         applyRuleBtn.addEventListener('click', applyRules);

@@ -221,7 +221,7 @@
     }
     .presenter-grid {
       display: grid;
-      grid-template-columns: 420px 1fr;
+      grid-template-columns: 500px 1fr;
       gap: 20px;
       align-items: start;
     }
@@ -241,29 +241,44 @@
       padding: 10px 8px;
     }
     body.presenter-mode .presenter-left th:nth-child(1),
-    body.presenter-mode .presenter-left td:nth-child(1) { width: 52px; }
+    body.presenter-mode .presenter-left td:nth-child(1) { width: 44px; }
     body.presenter-mode .presenter-left th:nth-child(2),
     body.presenter-mode .presenter-left td:nth-child(2) { width: auto; }
     body.presenter-mode .presenter-left th:nth-child(3),
     body.presenter-mode .presenter-left td:nth-child(3),
     body.presenter-mode .presenter-left th:nth-child(4),
-    body.presenter-mode .presenter-left td:nth-child(4),
+    body.presenter-mode .presenter-left td:nth-child(4) { width: 58px; }
     body.presenter-mode .presenter-left th:nth-child(5),
-    body.presenter-mode .presenter-left td:nth-child(5) { width: 72px; }
+    body.presenter-mode .presenter-left td:nth-child(5) { width: 56px; }
+    body.presenter-mode .presenter-left td.name,
+    body.presenter-mode .presenter-left th,
+    body.presenter-mode .presenter-left td {
+      writing-mode: horizontal-tb !important;
+      text-orientation: mixed !important;
+    }
     body.presenter-mode .presenter-left td.name {
-      font-size: 16px;
-      word-break: break-all;
+      font-size: 17px;
+      word-break: keep-all;
+      overflow-wrap: normal;
+      white-space: nowrap;
+      letter-spacing: 0;
     }
     body.presenter-mode .presenter-left td.score-big,
-    body.presenter-mode .presenter-left td.miss-big { font-size: 22px; }
+    body.presenter-mode .presenter-left td.miss-big {
+      font-size: 20px;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
     body.presenter-mode .presenter-left .status {
       min-width: 0;
-      padding: 4px 8px;
-      font-size: 12px;
+      padding: 4px 6px;
+      font-size: 11px;
+      white-space: nowrap;
     }
 
     @media (max-width: 1100px) {
-      .wrap, .presenter-grid { grid-template-columns: 1fr; }
+      .wrap { grid-template-columns: 1fr; }
+      .presenter-grid { grid-template-columns: 1fr; }
       .summary { grid-template-columns: repeat(2, 1fr); }
       .controller-score-area { position: static; }
     }

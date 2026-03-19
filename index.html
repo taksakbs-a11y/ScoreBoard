@@ -177,16 +177,6 @@
       box-shadow: inset 0 0 0 3px #ef4444;
       border-radius: 999px;
     }
-    td.actions-inline {
-      white-space: nowrap;
-      min-width: 190px;
-    }
-    td.actions-inline button {
-      margin-right: 6px;
-    }
-    td.actions-inline button:last-child {
-      margin-right: 0;
-    }
     .timer-bar-wrap {
       position: relative;
       width: 100%;
@@ -512,7 +502,7 @@
       </div>
     </div>
 
-<div id="presenterView" class="presenter-main">
+<div id="presenterView" class="presenter-main"><div class="sub" id="presenterRoomInfo" style="margin-bottom:10px;"></div>
     <div class="presenter-grid">
       <div class="presenter-left">
         <div class="table-wrap">
@@ -596,6 +586,8 @@
     const copyPresenterBtn = document.getElementById('copyPresenterBtn');
     const presenterHint = document.getElementById('presenterHint');
     const roomIdInput = document.getElementById('roomIdInput');
+    const roomParam = params.get('room');
+    if (roomParam) roomIdInput.value = roomParam;
     const connectBtn = document.getElementById('connectBtn');
     const resetRemoteBtn = document.getElementById('resetRemoteBtn');
     const ruleTypeSelect = document.getElementById('ruleTypeSelect');
@@ -895,6 +887,7 @@
     function getPresenterUrl() {
       const url = new URL(location.href);
       url.searchParams.set('view', 'presenter');
+      url.searchParams.set('room', roomIdInput.value.trim() || 'quiz-room-1');
       return url.toString();
     }
 
@@ -1089,7 +1082,7 @@
           `<td class="miss-big ${isMissReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedMiss(player, state.ruleConfig)}</td>` +
           `<td><span class="status ${statusClass} ${((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect) ? 'status-stand-correct' : (((state.ruleConfig || {}).type === 'combo_miss' && player.standingMiss) ? 'status-stand-miss' : '')}">${shownStatus}</span></td>` +
           (forPresenter ? '' :
-            `<td class="actions-inline">
+            `<td>
               <button class="small success" data-action="correct" data-id="${player.id}">正解+1</button>
               <button class="small danger" data-action="miss" data-id="${player.id}">誤答+1</button>
               <button class="small secondary" data-action="resetRow" data-id="${player.id}">リセット</button>
@@ -1105,13 +1098,6 @@
 
     function renderTimerOnly() {
       const rule = state.ruleConfig || RULE_PRESETS.maru_batsu;
-      const pointRule = isPointRule(rule);
-      if (ctrlPointHeader) ctrlPointHeader.style.display = pointRule ? '' : 'none';
-      if (presenterPointHeader) presenterPointHeader.style.display = pointRule ? '' : 'none';
-      if (ctrlCorrectHeader) ctrlCorrectHeader.textContent = pointRule ? '正解数' : '正解';
-      if (presenterCorrectHeader) presenterCorrectHeader.textContent = pointRule ? '正解数' : '正解';
-      if (ctrlMissHeader) ctrlMissHeader.textContent = pointRule ? '誤答数' : '誤答';
-      if (presenterMissHeader) presenterMissHeader.textContent = pointRule ? '誤答数' : '誤答';
       const ctrlTimerBox = document.getElementById('ctrlTimerBox');
       const presenterTimerBox = document.getElementById('presenterTimerBox');
       const ctrlTimerText = document.getElementById('ctrlTimerText');
@@ -1186,12 +1172,6 @@
       const ctrlRuleDetail = document.getElementById('ctrlCurrentRuleDetail');
       const presenterRuleTitle = document.getElementById('presenterCurrentRuleTitle');
       const presenterRuleDetail = document.getElementById('presenterCurrentRuleDetail');
-      const ctrlPointHeader = document.getElementById('ctrlPointHeader');
-      const presenterPointHeader = document.getElementById('presenterPointHeader');
-      const ctrlCorrectHeader = document.getElementById('ctrlCorrectHeader');
-      const ctrlMissHeader = document.getElementById('ctrlMissHeader');
-      const presenterCorrectHeader = document.getElementById('presenterCorrectHeader');
-      const presenterMissHeader = document.getElementById('presenterMissHeader');
       const ctrlTimerBox = document.getElementById('ctrlTimerBox');
       const presenterTimerBox = document.getElementById('presenterTimerBox');
       const ctrlTimerText = document.getElementById('ctrlTimerText');
@@ -1211,6 +1191,8 @@
         if (presenterTimerText) presenterTimerText.textContent = timerText;
       }
       renderTimerOnly();
+      const presenterRoomInfo = document.getElementById('presenterRoomInfo');
+      if (presenterRoomInfo) presenterRoomInfo.textContent = '表示用 / ルーム: ' + (roomIdInput.value.trim() || 'quiz-room-1');
       if (presenterHint) {
         presenterHint.textContent = isPresenter ? '表示専用画面' : '同じHTMLを別ウィンドウで開くと表示専用画面になります。';
       }

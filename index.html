@@ -303,6 +303,11 @@
     body.presenter-mode #controllerView td.name {
       font-size: 20px;
     }
+    body.presenter-mode #controllerView .status {
+      min-width: 64px;
+      padding: 6px 8px;
+      font-size: 14px;
+    }
     body.presenter-mode #controllerView .summary {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -311,8 +316,19 @@
       width: 100%;
       table-layout: fixed;
     }
+    body.presenter-mode #controllerView .table-wrap table {
+      min-width: 0;
+      width: 100%;
+      table-layout: fixed;
+    }
+    body.presenter-mode #controllerView .table-wrap th,
+    body.presenter-mode #controllerView .table-wrap td {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     body.presenter-mode #controllerView .table-wrap th:nth-child(1),
-    body.presenter-mode #controllerView .table-wrap td:nth-child(1) { width: 44px; }
+    body.presenter-mode #controllerView .table-wrap td:nth-child(1) { width: 36px; }
     body.presenter-mode #controllerView .table-wrap th:nth-child(2),
     body.presenter-mode #controllerView .table-wrap td:nth-child(2) { width: auto; }
     body.presenter-mode #controllerView .table-wrap th:nth-child(3),
@@ -320,9 +336,9 @@
     body.presenter-mode #controllerView .table-wrap th:nth-child(4),
     body.presenter-mode #controllerView .table-wrap td:nth-child(4),
     body.presenter-mode #controllerView .table-wrap th:nth-child(5),
-    body.presenter-mode #controllerView .table-wrap td:nth-child(5) { width: 72px; }
+    body.presenter-mode #controllerView .table-wrap td:nth-child(5) { width: 46px; }
     body.presenter-mode #controllerView .table-wrap th:nth-child(6),
-    body.presenter-mode #controllerView .table-wrap td:nth-child(6) { width: 84px; }
+    body.presenter-mode #controllerView .table-wrap td:nth-child(6) { width: 66px; }
     .presenter-grid {
       display: grid;
       grid-template-columns: 500px 1fr;
@@ -1151,6 +1167,7 @@
           `<td>${i + 1}</td>` +
           `<td class="name"></td>` +
           `<td class="point-big" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</td>` +
+          `<td class="point-big" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</td>` +
           `<td class="score-big ${isCorrectReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedCorrect(player, state.ruleConfig)}</td>` +
           `<td class="miss-big ${isMissReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedMiss(player, state.ruleConfig)}</td>` +
           `<td><span class="status ${statusClass} ${((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect) ? 'status-stand-correct' : (((state.ruleConfig || {}).type === 'combo_miss' && player.standingMiss) ? 'status-stand-miss' : '')}">${shownStatus}</span></td>` +
@@ -1175,6 +1192,9 @@
       const presenterTimerBox = document.getElementById('presenterTimerBox');
       const ctrlTimerText = document.getElementById('ctrlTimerText');
       const presenterTimerText = document.getElementById('presenterTimerText');
+      const ctrlPointHeader = document.getElementById('ctrlPointHeader');
+      const ctrlCorrectHeader = document.getElementById('ctrlCorrectHeader');
+      const ctrlMissHeader = document.getElementById('ctrlMissHeader');
 
       const isTimerace = rule.type === 'timerace';
       if (ctrlTimerBox) ctrlTimerBox.style.display = isTimerace ? '' : 'none';
@@ -1249,6 +1269,10 @@
       const presenterTimerBox = document.getElementById('presenterTimerBox');
       const ctrlTimerText = document.getElementById('ctrlTimerText');
       const presenterTimerText = document.getElementById('presenterTimerText');
+      const pointRule = isPointRule(rule);
+      if (ctrlPointHeader) ctrlPointHeader.style.display = pointRule ? '' : 'none';
+      if (ctrlCorrectHeader) ctrlCorrectHeader.textContent = pointRule ? '正解数' : '正解';
+      if (ctrlMissHeader) ctrlMissHeader.textContent = pointRule ? '誤答数' : '誤答';
       if (ctrlRuleTitle) ctrlRuleTitle.textContent = rule.label;
       if (ctrlRuleDetail) ctrlRuleDetail.textContent = getRuleDetailText(rule);
       if (presenterRuleTitle) presenterRuleTitle.textContent = rule.label;

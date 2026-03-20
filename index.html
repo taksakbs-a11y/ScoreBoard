@@ -400,34 +400,46 @@
     
     body.presenter-mode .wrap {
       grid-template-columns: 1fr;
-      max-width: 1200px;
+      max-width: 1280px;
+    }
+    body.presenter-mode .panel {
+      display: none !important;
     }
     body.presenter-mode .main {
       min-width: 0;
+      width: 100%;
     }
     body.presenter-mode table {
       min-width: 0;
       width: 100%;
-      table-layout: fixed;
+      table-layout: auto;
     }
     body.presenter-mode th,
     body.presenter-mode td {
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
+      text-overflow: clip;
     }
     body.presenter-mode th:nth-child(1),
     body.presenter-mode td:nth-child(1) { width: 40px; }
-    body.presenter-mode th:nth-child(2),
-    body.presenter-mode td:nth-child(2) { width: auto; }
     body.presenter-mode th:nth-child(3),
-    body.presenter-mode td:nth-child(3) { width: 72px; }
+    body.presenter-mode td:nth-child(3),
     body.presenter-mode th:nth-child(4),
-    body.presenter-mode td:nth-child(4) { width: 72px; }
+    body.presenter-mode td:nth-child(4),
     body.presenter-mode th:nth-child(5),
-    body.presenter-mode td:nth-child(5) { width: 72px; }
+    body.presenter-mode td:nth-child(5) { width: 68px; }
     body.presenter-mode th:nth-child(6),
-    body.presenter-mode td:nth-child(6) { width: 78px; }
+    body.presenter-mode td:nth-child(6) { width: 76px; }
+    body.presenter-mode td.name {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: nowrap;
+    }
+    body.presenter-mode td .status {
+      min-width: 0;
+      font-size: 12px;
+      padding: 5px 8px;
+    }
     body.presenter-mode .table-wrap {
       overflow-x: hidden;
     }
@@ -902,9 +914,7 @@
       if (rule.type === 'attack_survival') return Number(player.attackPoint || 0);
       if (rule.type === 'by') return Number(player.correct || 0) * Number(player.currentPoint || (Number(rule.param1) || 10));
       if (rule.type === 'timerace') {
-        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
-        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
-        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
+        if (isPresenter && !state.timerRevealScores) return '？';
         return Number(player.currentPoint || 0);
       }
       return '';
@@ -922,21 +932,13 @@
 
     function getDisplayedCorrect(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      if (rule.type === 'timerace') {
-        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
-        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
-        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
-      }
+      if (rule.type === 'timerace' && isPresenter && !state.timerRevealScores) return '？';
       return Number(player.correct || 0);
     }
 
     function getDisplayedMiss(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      if (rule.type === 'timerace') {
-        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
-        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
-        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
-      }
+      if (rule.type === 'timerace' && isPresenter && !state.timerRevealScores) return '？';
       if (rule.type === 'up_down') return Number(player.upDownStrike || 0);
       if (rule.type === 'by') return Number(player.currentPoint || (Number(rule.param1) || 10));
       return Number(player.miss || 0);
@@ -1310,8 +1312,8 @@
 
     async function setRemoteState(next) {
       state = next;
+      render();
       if (!roomRef) {
-        render();
         showMessage('ローカルで反映しました。Firebase接続後に同期できます。');
         return;
       }
@@ -1762,7 +1764,21 @@
 
     if (ruleTypeSelect) applyPresetToInputs('maru_batsu');
     setInterval(() => {
-      if ((state.ruleConfig || {}).type === 'timerace') renderTimerOnly();
+      if ((state.ruleConfig || {}).type === 'timerace') {
+        renderTimerOnly();
+        if (!isPresenter && roomRef && state.timerRunning) {
+          const now = Date.now();
+          if (now - Number(state.timerLastSyncAt || 0) >= 200) {
+            const nextState = {
+              ...state,
+              timerRemainingMs: Math.max(0, Number(state.timerEndAt || 0) - now),
+              timerLastSyncAt: now
+            };
+            state = nextState;
+            set(roomRef, nextState);
+          }
+        }
+      }
     }, 100);
     render();
     if (!isPresenter) {

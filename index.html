@@ -308,6 +308,11 @@
       padding: 6px 8px;
       font-size: 14px;
     }
+    body.presenter-mode #controllerView thead th {
+      font-size: 12px;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
     body.presenter-mode #controllerView .summary {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -336,9 +341,9 @@
     body.presenter-mode #controllerView .table-wrap th:nth-child(4),
     body.presenter-mode #controllerView .table-wrap td:nth-child(4),
     body.presenter-mode #controllerView .table-wrap th:nth-child(5),
-    body.presenter-mode #controllerView .table-wrap td:nth-child(5) { width: 46px; }
+    body.presenter-mode #controllerView .table-wrap td:nth-child(5) { width: 44px; }
     body.presenter-mode #controllerView .table-wrap th:nth-child(6),
-    body.presenter-mode #controllerView .table-wrap td:nth-child(6) { width: 66px; }
+    body.presenter-mode #controllerView .table-wrap td:nth-child(6) { width: 72px; }
     .presenter-grid {
       display: grid;
       grid-template-columns: 500px 1fr;
@@ -1166,7 +1171,6 @@
         tr.innerHTML =
           `<td>${i + 1}</td>` +
           `<td class="name"></td>` +
-          `<td class="point-big" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</td>` +
           `<td class="point-big" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</td>` +
           `<td class="score-big ${isCorrectReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedCorrect(player, state.ruleConfig)}</td>` +
           `<td class="miss-big ${isMissReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedMiss(player, state.ruleConfig)}</td>` +

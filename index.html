@@ -397,58 +397,6 @@
     body.presenter-mode.loading-presenter .loading-overlay {
       display: flex;
     }
-    
-    body.presenter-mode .wrap {
-      grid-template-columns: 1fr;
-      max-width: 1280px;
-    }
-    body.presenter-mode .panel {
-      display: none !important;
-    }
-    body.presenter-mode .main {
-      min-width: 0;
-      width: 100%;
-    }
-    body.presenter-mode table {
-      min-width: 0;
-      width: 100%;
-      table-layout: auto;
-    }
-    body.presenter-mode th,
-    body.presenter-mode td {
-      white-space: nowrap;
-      overflow: visible;
-      text-overflow: clip;
-    }
-    body.presenter-mode th:nth-child(1),
-    body.presenter-mode td:nth-child(1) { width: 40px; }
-    body.presenter-mode th:nth-child(3),
-    body.presenter-mode td:nth-child(3),
-    body.presenter-mode th:nth-child(4),
-    body.presenter-mode td:nth-child(4),
-    body.presenter-mode th:nth-child(5),
-    body.presenter-mode td:nth-child(5) { width: 68px; }
-    body.presenter-mode th:nth-child(6),
-    body.presenter-mode td:nth-child(6) { width: 76px; }
-    body.presenter-mode td.name {
-      overflow: visible;
-      text-overflow: clip;
-      white-space: nowrap;
-    }
-    body.presenter-mode td .status {
-      min-width: 0;
-      font-size: 12px;
-      padding: 5px 8px;
-    }
-    body.presenter-mode .table-wrap {
-      overflow-x: hidden;
-    }
-    body.presenter-mode #leftTimerBtn,
-    body.presenter-mode #rightTimerBtn,
-    body.presenter-mode #showScoresBtn {
-      display: none !important;
-    }
-
     @media (max-width: 1100px) {
       .wrap { grid-template-columns: 1fr; }
       .presenter-grid { grid-template-columns: 1fr; }
@@ -752,8 +700,7 @@
       timerEndAt: 0,
       timerRemainingMs: 0,
       timerRevealScores: false,
-      hasSyncedFromFirebase: false,
-      timerLastSyncAt: 0
+      hasSyncedFromFirebase: false
     };
 
     const localHistory = [];
@@ -914,7 +861,9 @@
       if (rule.type === 'attack_survival') return Number(player.attackPoint || 0);
       if (rule.type === 'by') return Number(player.correct || 0) * Number(player.currentPoint || (Number(rule.param1) || 10));
       if (rule.type === 'timerace') {
-        if (isPresenter && !state.timerRevealScores) return '？';
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
         return Number(player.currentPoint || 0);
       }
       return '';
@@ -932,13 +881,21 @@
 
     function getDisplayedCorrect(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      if (rule.type === 'timerace' && isPresenter && !state.timerRevealScores) return '？';
+      if (rule.type === 'timerace') {
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
+      }
       return Number(player.correct || 0);
     }
 
     function getDisplayedMiss(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      if (rule.type === 'timerace' && isPresenter && !state.timerRevealScores) return '？';
+      if (rule.type === 'timerace') {
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
+      }
       if (rule.type === 'up_down') return Number(player.upDownStrike || 0);
       if (rule.type === 'by') return Number(player.currentPoint || (Number(rule.param1) || 10));
       return Number(player.miss || 0);
@@ -1213,56 +1170,59 @@
 
 
     function renderTimerOnly() {
-      const rule = this.state.ruleConfig || RULE_PRESETS.maru_batsu;
+      const rule = state.ruleConfig || RULE_PRESETS.maru_batsu;
+      const ctrlTimerBox = document.getElementById('ctrlTimerBox');
+      const presenterTimerBox = document.getElementById('presenterTimerBox');
+      const ctrlTimerText = document.getElementById('ctrlTimerText');
+      const presenterTimerText = document.getElementById('presenterTimerText');
+
       const isTimerace = rule.type === 'timerace';
-      this.ui.ctrlTimerBox.style.display = isTimerace ? '' : 'none';
-      this.ui.presenterTimerBox.style.display = isTimerace ? '' : 'none';
+      if (ctrlTimerBox) ctrlTimerBox.style.display = isTimerace ? '' : 'none';
+      if (presenterTimerBox) presenterTimerBox.style.display = isTimerace ? '' : 'none';
       if (!isTimerace) return;
 
       const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
       let remain = totalMs;
 
-      if (this.state.timerRunning) {
-        if (this.isPresenter) {
-          remain = Math.max(0, Number(this.state.timerRemainingMs || 0));
-        } else {
-          remain = Math.max(0, Number(this.state.timerEndAt || 0) - Date.now());
-          this.state.timerRemainingMs = remain;
-          if (remain === 0) {
-            this.state.timerRunning = false;
-            this.state.timerPaused = false;
-            this.state.timerEndAt = 0;
-            this.state.timerRemainingMs = 0;
-          }
+      if (state.timerRunning) {
+        remain = Math.max(0, Number(state.timerEndAt || 0) - Date.now());
+        if (remain === 0) {
+          state.timerRunning = false;
+          state.timerPaused = false;
+          state.timerEndAt = 0;
+          state.timerRemainingMs = 0;
         }
-      } else if (Number(this.state.timerRemainingMs || 0) > 0) {
-        remain = Number(this.state.timerRemainingMs || 0);
+      } else if (Number(state.timerRemainingMs || 0) > 0) {
+        remain = Number(state.timerRemainingMs || 0);
       }
 
       const pct = Math.max(0, Math.min(100, totalMs ? (remain / totalMs) * 100 : 0));
-      const timerText = this.formatTimer(remain);
-      this.ui.ctrlTimerText.textContent = timerText;
-      this.ui.presenterTimerText.textContent = timerText;
-      this.ui.ctrlTimerFill.style.width = pct + '%';
-      this.ui.presenterTimerFill.style.width = pct + '%';
+      const timerText = formatTimer(remain);
 
-      if (this.state.timerRunning) {
-        this.ui.leftTimerBtn.textContent = 'タイマー開始';
-        this.ui.leftTimerBtn.disabled = true;
-        this.ui.rightTimerBtn.textContent = 'タイマー停止';
-        this.ui.rightTimerBtn.disabled = false;
-      } else if (this.state.timerPaused && Number(this.state.timerRemainingMs || 0) > 0) {
-        this.ui.leftTimerBtn.textContent = 'タイマー再開';
-        this.ui.leftTimerBtn.disabled = false;
-        this.ui.rightTimerBtn.textContent = 'タイマーリセット';
-        this.ui.rightTimerBtn.disabled = false;
-      } else {
-        this.ui.leftTimerBtn.textContent = 'タイマー開始';
-        this.ui.leftTimerBtn.disabled = false;
-        this.ui.rightTimerBtn.textContent = 'タイマー停止';
-        this.ui.rightTimerBtn.disabled = true;
+      if (ctrlTimerText) ctrlTimerText.textContent = timerText;
+      if (presenterTimerText) presenterTimerText.textContent = timerText;
+      if (ctrlTimerFill) ctrlTimerFill.style.width = pct + '%';
+      if (presenterTimerFill) presenterTimerFill.style.width = pct + '%';
+
+      if (leftTimerBtn && rightTimerBtn) {
+        if (state.timerRunning) {
+          leftTimerBtn.textContent = 'タイマー開始';
+          leftTimerBtn.disabled = true;
+          rightTimerBtn.textContent = 'タイマー停止';
+          rightTimerBtn.disabled = false;
+        } else if (state.timerPaused && Number(state.timerRemainingMs || 0) > 0) {
+          leftTimerBtn.textContent = 'タイマー再開';
+          leftTimerBtn.disabled = false;
+          rightTimerBtn.textContent = 'タイマーリセット';
+          rightTimerBtn.disabled = false;
+        } else {
+          leftTimerBtn.textContent = 'タイマー開始';
+          leftTimerBtn.disabled = false;
+          rightTimerBtn.textContent = 'タイマー停止';
+          rightTimerBtn.disabled = true;
+        }
+        if (showScoresBtn) showScoresBtn.disabled = !!state.timerRevealScores;
       }
-      this.ui.showScoresBtn.disabled = !!this.state.timerRevealScores;
     }
 
     function render() {
@@ -1312,8 +1272,8 @@
 
     async function setRemoteState(next) {
       state = next;
-      render();
       if (!roomRef) {
+        render();
         showMessage('ローカルで反映しました。Firebase接続後に同期できます。');
         return;
       }
@@ -1423,8 +1383,7 @@
           timerEndAt: Number(val.timerEndAt || 0),
           timerRemainingMs: Number(val.timerRemainingMs || 0),
           timerRevealScores: !!val.timerRevealScores,
-          hasSyncedFromFirebase: true,
-          timerLastSyncAt: Number(val.timerLastSyncAt || 0)
+          hasSyncedFromFirebase: true
         };
         render();
       });
@@ -1513,7 +1472,6 @@
           nextState.timerRunning = true;
           nextState.timerPaused = false;
           nextState.timerRevealScores = false;
-          nextState.timerLastSyncAt = Date.now();
           await setRemoteState(nextState);
           showMessage('タイマーを開始しました。');
           return;
@@ -1764,21 +1722,7 @@
 
     if (ruleTypeSelect) applyPresetToInputs('maru_batsu');
     setInterval(() => {
-      if ((state.ruleConfig || {}).type === 'timerace') {
-        renderTimerOnly();
-        if (!isPresenter && roomRef && state.timerRunning) {
-          const now = Date.now();
-          if (now - Number(state.timerLastSyncAt || 0) >= 200) {
-            const nextState = {
-              ...state,
-              timerRemainingMs: Math.max(0, Number(state.timerEndAt || 0) - now),
-              timerLastSyncAt: now
-            };
-            state = nextState;
-            set(roomRef, nextState);
-          }
-        }
-      }
+      if ((state.ruleConfig || {}).type === 'timerace') renderTimerOnly();
     }, 100);
     render();
     if (!isPresenter) {

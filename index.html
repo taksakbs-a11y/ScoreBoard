@@ -207,17 +207,14 @@
       z-index: 2;
     }
 
-    td.point-big {
+    td.point-big, td.score-big, td.miss-big {
       font-size: 24px;
       font-weight: 800;
       line-height: 1;
-      color: #c4b5fd;
       white-space: nowrap;
     }
-    td.score-big, td.miss-big {
-      font-size: 30px;
-      font-weight: 800;
-      line-height: 1;
+    td.point-big {
+      color: #c4b5fd;
     }
     td.score-big { color: #93c5fd; }
     td.miss-big { color: #fca5a5; }
@@ -541,7 +538,7 @@
               <tr>
                 <th>順</th>
                 <th>名前</th>
-                <th id="ctrlPointHeader" style="display:none;">ポイント</th>
+                <th id="ctrlPointHeader" style="display:none;">得点</th>
                 <th id="ctrlCorrectHeader">正解</th>
                 <th id="ctrlMissHeader">誤答</th>
                 <th>状態</th>
@@ -604,7 +601,7 @@
               <tr>
                 <th>順</th>
                 <th>名前</th>
-                <th id="presenterPointHeader" style="display:none;">ポイント</th>
+                <th id="presenterPointHeader" style="display:none;">得点</th>
                 <th id="presenterCorrectHeader">正解</th>
                 <th id="presenterMissHeader">誤答</th>
                 <th>状態</th>
@@ -1275,8 +1272,9 @@
       const presenterTimerText = document.getElementById('presenterTimerText');
       const pointRule = isPointRule(rule);
       if (ctrlPointHeader) ctrlPointHeader.style.display = pointRule ? '' : 'none';
-      if (ctrlCorrectHeader) ctrlCorrectHeader.textContent = pointRule ? '正解数' : '正解';
-      if (ctrlMissHeader) ctrlMissHeader.textContent = pointRule ? '誤答数' : '誤答';
+      if (ctrlPointHeader) ctrlPointHeader.textContent = '得点';
+      if (ctrlCorrectHeader) ctrlCorrectHeader.textContent = '正解';
+      if (ctrlMissHeader) ctrlMissHeader.textContent = '誤答';
       if (ctrlRuleTitle) ctrlRuleTitle.textContent = rule.label;
       if (ctrlRuleDetail) ctrlRuleDetail.textContent = getRuleDetailText(rule);
       if (presenterRuleTitle) presenterRuleTitle.textContent = rule.label;

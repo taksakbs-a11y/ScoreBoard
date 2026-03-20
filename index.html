@@ -718,6 +718,7 @@
       timerEndAt: 0,
       timerRemainingMs: 0,
       timerRevealScores: false,
+      timerFinished: false,
       hasSyncedFromFirebase: false
     };
 
@@ -1212,7 +1213,15 @@
           state.timerPaused = false;
           state.timerEndAt = 0;
           state.timerRemainingMs = 0;
+          state.timerFinished = true;
+          if (!isPresenter && roomRef) {
+            set(roomRef, state);
+          }
+        } else {
+          state.timerRemainingMs = remain;
         }
+      } else if (state.timerFinished) {
+        remain = 0;
       } else if (Number(state.timerRemainingMs || 0) > 0) {
         remain = Number(state.timerRemainingMs || 0);
       }
@@ -1234,6 +1243,11 @@
         } else if (state.timerPaused && Number(state.timerRemainingMs || 0) > 0) {
           leftTimerBtn.textContent = 'タイマー再開';
           leftTimerBtn.disabled = false;
+          rightTimerBtn.textContent = 'タイマーリセット';
+          rightTimerBtn.disabled = false;
+        } else if (state.timerFinished) {
+          leftTimerBtn.textContent = 'タイマー開始';
+          leftTimerBtn.disabled = true;
           rightTimerBtn.textContent = 'タイマーリセット';
           rightTimerBtn.disabled = false;
         } else {
@@ -1409,6 +1423,7 @@
           timerEndAt: Number(val.timerEndAt || 0),
           timerRemainingMs: Number(val.timerRemainingMs || 0),
           timerRevealScores: !!val.timerRevealScores,
+          timerFinished: !!val.timerFinished,
           hasSyncedFromFirebase: true
         };
         render();
@@ -1498,6 +1513,7 @@
           nextState.timerRunning = true;
           nextState.timerPaused = false;
           nextState.timerRevealScores = false;
+          nextState.timerFinished = false;
           await setRemoteState(nextState);
           showMessage('タイマーを開始しました。');
           return;
@@ -1507,6 +1523,7 @@
           nextState.timerEndAt = Date.now() + Number(nextState.timerRemainingMs || 0);
           nextState.timerRunning = true;
           nextState.timerPaused = false;
+          nextState.timerFinished = false;
           await setRemoteState(nextState);
           showMessage('タイマーを再開しました。');
         }
@@ -1542,6 +1559,7 @@
           nextState.timerRunning = false;
           nextState.timerPaused = false;
           nextState.timerRevealScores = false;
+          nextState.timerFinished = false;
           await setRemoteState(nextState);
           showMessage('タイマーをリセットしました。');
         }

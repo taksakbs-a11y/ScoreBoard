@@ -1524,6 +1524,7 @@
           nextState.timerRunning = true;
           nextState.timerPaused = false;
           nextState.timerFinished = false;
+          nextState.timerRevealScores = false;
           await setRemoteState(nextState);
           state = nextState;
           render();

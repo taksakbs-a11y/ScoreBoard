@@ -1113,9 +1113,8 @@
       if (!state.presenterRanked) return false;
       const q = Math.max(0, Number(state.qualifierCount || 1));
       if (!q) return false;
-      if (getStatus(player) !== '判定') return false;
-      const judged = orderedPlayers.filter(p => getStatus(p) === '判定');
-      return judged.slice(0, q).some(p => p.id === player.id);
+      const topOverall = orderedPlayers.slice(0, q).map(p => p.id);
+      return getStatus(player) === '判定' && topOverall.includes(player.id);
     }
 
     function getDisplayPlayers(forPresenter) {
@@ -1342,9 +1341,9 @@
       if (ctrlCorrectHeader) ctrlCorrectHeader.textContent = '正解';
       if (ctrlMissHeader) ctrlMissHeader.textContent = '誤答';
       if (ctrlRuleTitle) ctrlRuleTitle.textContent = rule.label;
-      if (ctrlRuleDetail) ctrlRuleDetail.textContent = getRuleDetailText(rule);
+      if (ctrlRuleDetail) ctrlRuleDetail.textContent = getRuleDetailText(rule) + ' / 勝抜人数 ' + String(state.qualifierCount || 1);
       if (presenterRuleTitle) presenterRuleTitle.textContent = rule.label;
-      if (presenterRuleDetail) presenterRuleDetail.textContent = getRuleDetailText(rule);
+      if (presenterRuleDetail) presenterRuleDetail.textContent = getRuleDetailText(rule) + ' / 勝抜人数 ' + String(state.qualifierCount || 1);
 
       const isTimerace = rule.type === 'timerace';
       if (ctrlTimerBox) ctrlTimerBox.style.display = isTimerace ? '' : 'none';

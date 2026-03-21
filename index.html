@@ -1533,14 +1533,11 @@
 
       showScoresBtn?.addEventListener('click', async () => {
         pushHistory();
-        const nextState = cloneState(state);
+        const nextState = JSON.parse(JSON.stringify(state));
         nextState.timerRevealScores = true;
-
-        // 先にローカル state を更新して、定期同期に古い値で上書きされるのを防ぐ
+        await setRemoteState(nextState);
         state = nextState;
         render();
-
-        await setRemoteState(nextState);
         showMessage('得点を表示しました。');
       });
 

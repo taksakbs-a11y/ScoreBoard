@@ -691,7 +691,6 @@
     const resetRemoteBtn = document.getElementById('resetRemoteBtn');
     const ruleTypeSelect = document.getElementById('ruleTypeSelect');
     const ruleLabelInput = document.getElementById('ruleLabelInput');
-    if (ruleLabelInput) ruleLabelInput.readOnly = true;
     const ruleParam1 = document.getElementById('ruleParam1');
     const ruleParam2 = document.getElementById('ruleParam2');
     const ruleParam3 = document.getElementById('ruleParam3');
@@ -774,7 +773,7 @@
       const preset = RULE_PRESETS[type];
       if (!preset || !ruleTypeSelect) return;
       ruleTypeSelect.value = type;
-      ruleLabelInput.value = makeRuleLabel({ type, param1: preset.p1, param2: preset.p2, param3: preset.p3, label: preset.label });
+      ruleLabelInput.value = preset.label;
       ruleParam1.value = preset.p1;
       ruleParam2.value = preset.p2;
       ruleParam3.value = preset.p3;
@@ -800,7 +799,7 @@
     function readRuleConfigFromInputs() {
       return {
         type: ruleTypeSelect.value,
-        label: makeRuleLabel({ type: ruleTypeSelect.value, param1: Number(ruleParam1.value)||0, param2: Number(ruleParam2.value)||0, param3: Number(ruleParam3.value)||0 }),
+        label: ruleLabelInput.value.trim() || RULE_PRESETS[ruleTypeSelect.value].label,
         param1: Number(ruleParam1.value) || 0,
         param2: Number(ruleParam2.value) || 0,
         param3: Number(ruleParam3.value) || 0
@@ -1128,27 +1127,28 @@
       const list = clonePlayers(state.players);
       if (state.presenterRanked) {
         list.sort((a, b) => {
+          const order = { '勝抜': 0, '進行中': 1, '判定': 1, '失格': 2 };
           const sa = getStatus(a);
           const sb = getStatus(b);
+          if (order[sa] !== order[sb]) return order[sa] - order[sb];
 
-          if (sa === '勝抜' && sb !== '勝抜') return -1;
-          if (sa !== '勝抜' && sb === '勝抜') return 1;
           if (sa === '勝抜' && sb === '勝抜') {
             const aw = Number(a.winOrder || 0);
             const bw = Number(b.winOrder || 0);
             if (aw !== bw) return aw - bw;
           }
 
-          if (sa === '失格' && sb !== '失格') return 1;
-          if (sa !== '失格' && sb === '失格') return -1;
+          if ((sa === '進行中' || sa === '判定') && (sb === '進行中' || sb === '判定')) {
+            if (b.correct !== a.correct) return b.correct - a.correct;
+            if (a.miss !== b.miss) return a.miss - b.miss;
+          }
+
           if (sa === '失格' && sb === '失格') {
             const al = Number(a.loseOrder || 0);
             const bl = Number(b.loseOrder || 0);
-            if (al !== bl) return bl - al;
+            if (al !== bl) return al - bl;
           }
 
-          if (b.correct !== a.correct) return b.correct - a.correct;
-          if (a.miss !== b.miss) return a.miss - b.miss;
           return a.name.localeCompare(b.name, 'ja');
         });
       } else {

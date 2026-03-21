@@ -220,6 +220,7 @@
     td.miss-big { color: #fca5a5; }
     tr.win td { background: rgba(22,163,74,0.14); }
     tr.lose td { background: rgba(220,38,38,0.14); }
+    tr.qualified td { background: rgba(22,163,74,0.14); }
     tr.resting td { background: rgba(148,163,184,0.12); color: #cbd5e1; }
     .status {
       display: inline-block;
@@ -511,6 +512,13 @@
         <button id="applyRuleBtn" class="secondary">ルール反映</button>
         <button id="undoBtn" class="secondary">ひとつ前に戻す</button>
       </div>
+      <div class="row">
+        <div>
+          <div class="sub" style="margin:0 0 6px;">勝ち抜け人数</div>
+          <input id="qualifierCountInput" type="number" value="1" min="1" />
+        </div>
+        <div></div>
+      </div>
       <div class="btns">
         <button id="rankModeBtn" class="secondary">順位判定</button>
         <button id="inputOrderBtn" class="secondary">入力順表示</button>
@@ -666,6 +674,7 @@
     const skipQuestionBtn = document.getElementById('skipQuestionBtn');
     const rankModeBtn = document.getElementById('rankModeBtn');
     const inputOrderBtn = document.getElementById('inputOrderBtn');
+    const qualifierCountInput = document.getElementById('qualifierCountInput');
     const sampleBtn = document.getElementById('sampleBtn');
     const winScoreInput = document.getElementById('winScore');
     const loseMissInput = document.getElementById('loseMiss');
@@ -721,7 +730,8 @@
       timerRemainingMs: 0,
       timerRevealScores: false,
       timerFinished: false,
-      hasSyncedFromFirebase: false
+      hasSyncedFromFirebase: false,
+      qualifierCount: 1
     };
 
     const localHistory = [];
@@ -1082,9 +1092,19 @@
       return v.replace(/""/g, '"');
     }
 
+
+    function isQualifiedByRank(player, orderedPlayers) {
+      if (!state.presenterRanked) return false;
+      const q = Math.max(0, Number(state.qualifierCount || 1));
+      if (!q) return false;
+      if (getStatus(player) !== '判定') return false;
+      const judged = orderedPlayers.filter(p => getStatus(p) === '判定');
+      return judged.slice(0, q).some(p => p.id === player.id);
+    }
+
     function getDisplayPlayers(forPresenter) {
       const list = clonePlayers(state.players);
-      if (forPresenter && state.presenterRanked) {
+      if (state.presenterRanked) {
         list.sort((a, b) => {
           const order = { '勝抜': 0, '進行中': 1, '判定': 1, '失格': 2 };
           const sa = getStatus(a);
@@ -1137,7 +1157,7 @@
       let playing = 0, win = 0, lose = 0;
       displayPlayers.forEach(player => {
         const status = getStatus(player);
-        if (status === '進行中') playing++;
+        if (status === '進行中' || status === '判定') playing++;
         if (status === '勝抜') win++;
         if (status === '失格') lose++;
       });
@@ -1158,6 +1178,7 @@
         const statusClass = getStatusClass(status);
         const tr = document.createElement('tr');
         if (isResting(player, state.ruleConfig)) tr.className = 'resting';
+        if (isQualifiedByRank(player, displayPlayers)) tr.className = 'qualified';
         if (status === '勝抜') tr.className = 'win';
         if (status === '失格') tr.className = 'lose';
 
@@ -1272,6 +1293,7 @@
       if (csvInput) csvInput.value = state.csvInput || '';
       if (winScoreInput) winScoreInput.value = String(state.winScore);
       if (loseMissInput) loseMissInput.value = String(state.loseMiss);
+      if (qualifierCountInput) qualifierCountInput.value = String(state.qualifierCount || 1);
       syncRuleInputsFromState();
       const rule = state.ruleConfig || RULE_PRESETS.maru_batsu;
       const ctrlRuleTitle = document.getElementById('ctrlCurrentRuleTitle');
@@ -1422,7 +1444,8 @@
           timerRemainingMs: Number(val.timerRemainingMs || 0),
           timerRevealScores: !!val.timerRevealScores,
           timerFinished: !!val.timerFinished,
-          hasSyncedFromFirebase: true
+          hasSyncedFromFirebase: true,
+          qualifierCount: Number(val.qualifierCount || 1)
         };
         render();
       });
@@ -1582,14 +1605,14 @@
 
       rankModeBtn.addEventListener('click', async () => {
         pushHistory();
-        await setRemoteState({ ...state, presenterRanked: true });
-        showMessage('表示用を順位表示にしました。');
+        await setRemoteState({ ...state, presenterRanked: true, qualifierCount: Number(qualifierCountInput.value) || 1 });
+        showMessage('順位判定表示にしました。');
       });
 
       inputOrderBtn.addEventListener('click', async () => {
         pushHistory();
-        await setRemoteState({ ...state, presenterRanked: false });
-        showMessage('表示用を入力順表示にしました。');
+        await setRemoteState({ ...state, presenterRanked: false, qualifierCount: Number(qualifierCountInput.value) || 1 });
+        showMessage('入力順表示にしました。');
       });
 
       loadCsvBtn.addEventListener('click', async () => {

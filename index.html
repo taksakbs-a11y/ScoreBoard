@@ -1536,16 +1536,11 @@
         const nextState = cloneState(state);
         nextState.timerRevealScores = true;
 
-        // まずローカル state を先に更新して、タイマー同期に上書きされにくくする
+        // 先にローカル state を更新して、定期同期に古い値で上書きされるのを防ぐ
         state = nextState;
         render();
 
-        if (roomRef) {
-          await set(roomRef, nextState);
-        } else {
-          await setRemoteState(nextState);
-        }
-
+        await setRemoteState(nextState);
         showMessage('得点を表示しました。');
       });
 

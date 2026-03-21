@@ -1533,7 +1533,7 @@
 
       showScoresBtn?.addEventListener('click', async () => {
         pushHistory();
-        const nextState = cloneState(state);
+        const nextState = JSON.parse(JSON.stringify(state));
         nextState.timerRevealScores = true;
         await setRemoteState(nextState);
         state = nextState;

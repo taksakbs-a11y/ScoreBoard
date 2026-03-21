@@ -878,11 +878,12 @@
 
     function getPointValue(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
       if (rule.type === 'divide') return Number(player.currentPoint || 0);
       if (rule.type === 'attack_survival') return Number(player.attackPoint || 0);
       if (rule.type === 'by') return Number(player.correct || 0) * Number(player.currentPoint || (Number(rule.param1) || 10));
       if (rule.type === 'timerace') {
-        if (isPresenter && !state.timerRevealScores) return '？';
+        if (isPresenter && timerSessionActive && !state.timerRevealScores) return '？';
         return Number(player.currentPoint || 0);
       }
       return '';
@@ -900,13 +901,15 @@
 
     function getDisplayedCorrect(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      if (rule.type === 'timerace' && isPresenter && !state.timerRevealScores) return '？';
+      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
+      if (rule.type === 'timerace' && isPresenter && timerSessionActive && !state.timerRevealScores) return '？';
       return Number(player.correct || 0);
     }
 
     function getDisplayedMiss(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      if (rule.type === 'timerace' && isPresenter && !state.timerRevealScores) return '？';
+      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
+      if (rule.type === 'timerace' && isPresenter && timerSessionActive && !state.timerRevealScores) return '？';
       if (rule.type === 'up_down') return Number(player.upDownStrike || 0);
       if (rule.type === 'by') return Number(player.currentPoint || (Number(rule.param1) || 10));
       return Number(player.miss || 0);
@@ -1532,9 +1535,17 @@
         pushHistory();
         const nextState = cloneState(state);
         nextState.timerRevealScores = true;
-        await setRemoteState(nextState);
+
+        // まずローカル state を先に更新して、タイマー同期に上書きされにくくする
         state = nextState;
         render();
+
+        if (roomRef) {
+          await set(roomRef, nextState);
+        } else {
+          await setRemoteState(nextState);
+        }
+
         showMessage('得点を表示しました。');
       });
 

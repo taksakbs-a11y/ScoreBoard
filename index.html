@@ -696,8 +696,6 @@
     let db = null;
     let roomRef = null;
 
-    let lastTimerBroadcastAt = 0;
-
     let state = {
       players: [],
       winScore: 7,
@@ -878,12 +876,13 @@
 
     function getPointValue(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
       if (rule.type === 'divide') return Number(player.currentPoint || 0);
       if (rule.type === 'attack_survival') return Number(player.attackPoint || 0);
       if (rule.type === 'by') return Number(player.correct || 0) * Number(player.currentPoint || (Number(rule.param1) || 10));
       if (rule.type === 'timerace') {
-        if (isPresenter && timerSessionActive && !state.timerRevealScores) return '？';
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
         return Number(player.currentPoint || 0);
       }
       return '';
@@ -901,15 +900,21 @@
 
     function getDisplayedCorrect(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
-      if (rule.type === 'timerace' && isPresenter && timerSessionActive && !state.timerRevealScores) return '？';
+      if (rule.type === 'timerace') {
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
+      }
       return Number(player.correct || 0);
     }
 
     function getDisplayedMiss(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
-      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
-      if (rule.type === 'timerace' && isPresenter && timerSessionActive && !state.timerRevealScores) return '？';
+      if (rule.type === 'timerace') {
+        const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+        const activeLike = state.timerRunning || (Number(state.timerRemainingMs || totalMs) < totalMs && Number(state.timerRemainingMs || 0) > 0);
+        if (isPresenter && activeLike && !state.timerRevealScores) return '？';
+      }
       if (rule.type === 'up_down') return Number(player.upDownStrike || 0);
       if (rule.type === 'by') return Number(player.currentPoint || (Number(rule.param1) || 10));
       return Number(player.miss || 0);
@@ -1202,12 +1207,7 @@
       let remain = totalMs;
 
       if (state.timerRunning) {
-        if (isPresenter) {
-          remain = Math.max(0, Number(state.timerRemainingMs || 0));
-        } else {
-          remain = Math.max(0, Number(state.timerEndAt || 0) - Date.now());
-          state.timerRemainingMs = remain;
-        }
+        remain = Math.max(0, Number(state.timerEndAt || 0) - Date.now());
         if (remain === 0) {
           state.timerRunning = false;
           state.timerPaused = false;
@@ -1217,6 +1217,8 @@
           if (!isPresenter && roomRef) {
             set(roomRef, state);
           }
+        } else {
+          state.timerRemainingMs = remain;
         }
       } else if (state.timerFinished) {
         remain = 0;
@@ -1513,8 +1515,6 @@
           nextState.timerRevealScores = false;
           nextState.timerFinished = false;
           await setRemoteState(nextState);
-          state = nextState;
-          render();
           showMessage('タイマーを開始しました。');
           return;
         }
@@ -1525,8 +1525,6 @@
           nextState.timerPaused = false;
           nextState.timerFinished = false;
           await setRemoteState(nextState);
-          state = nextState;
-          render();
           showMessage('タイマーを再開しました。');
         }
       });
@@ -1551,8 +1549,6 @@
           nextState.timerRunning = false;
           nextState.timerPaused = true;
           await setRemoteState(nextState);
-          state = nextState;
-          render();
           showMessage('タイマーを停止しました。');
           return;
         }
@@ -1565,8 +1561,6 @@
           nextState.timerRevealScores = false;
           nextState.timerFinished = false;
           await setRemoteState(nextState);
-          state = nextState;
-          render();
           showMessage('タイマーをリセットしました。');
         }
       });
@@ -1772,16 +1766,7 @@
 
     if (ruleTypeSelect) applyPresetToInputs('maru_batsu');
     setInterval(() => {
-      if ((state.ruleConfig || {}).type === 'timerace') {
-        renderTimerOnly();
-        if (!isPresenter && roomRef && state.timerRunning) {
-          const now = Date.now();
-          if (now - lastTimerBroadcastAt >= 200) {
-            lastTimerBroadcastAt = now;
-            set(roomRef, state);
-          }
-        }
-      }
+      if ((state.ruleConfig || {}).type === 'timerace') renderTimerOnly();
     }, 100);
     render();
     if (!isPresenter) {

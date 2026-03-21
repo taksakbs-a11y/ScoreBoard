@@ -528,7 +528,7 @@
       <div class="sub">形式：番号,問題,答え,解説</div>
       <textarea id="csvInput" class="csv-box" placeholder="番号,問題,答え,解説&#10;1,夏目漱石の『こころ』で先生が遺書を託した相手は誰？,私,物語は先生の遺書という形で過去が明かされる。"></textarea>
       <div class="btns">
-        <button id="loadCsvBtn">CSVを読み込む</button>
+        <button id="loadCsvBtn">問題を読み込む</button>
         <button id="sampleBtn" class="secondary">サンプル読込</button>
       </div>
 
@@ -1065,15 +1065,21 @@
       return list.map(player => ({ ...player }));
     }
 
-    function parseCSV(text) {
+    function parseDelimitedText(text) {
+      const normalized = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const sampleLines = normalized.split('\n').filter(line => line.trim() !== '').slice(0, 5);
+      const hasTabs = sampleLines.some(line => line.includes('\t'));
+      const separator = hasTabs ? '\t' : ',';
+
       const rows = [];
       let row = [];
       let current = '';
       let inQuotes = false;
 
-      for (let i = 0; i < text.length; i++) {
-        const ch = text.charAt(i);
-        const next = text.charAt(i + 1);
+      for (let i = 0; i < normalized.length; i++) {
+        const ch = normalized.charAt(i);
+        const next = normalized.charAt(i + 1);
+
         if (ch === '"') {
           if (inQuotes && next === '"') {
             current += '"';
@@ -1081,21 +1087,21 @@
           } else {
             inQuotes = !inQuotes;
           }
-        } else if (ch === ',' && !inQuotes) {
+        } else if (ch === separator && !inQuotes) {
           row.push(current);
           current = '';
-        } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
-          if (ch === '\r' && next === '\n') i++;
+        } else if (ch === '\n' && !inQuotes) {
           row.push(current);
-          if (row.join('').trim() !== '') rows.push(row);
+          if (row.some(cell => String(cell).trim() !== '')) rows.push(row);
           row = [];
           current = '';
         } else {
           current += ch;
         }
       }
+
       row.push(current);
-      if (row.join('').trim() !== '') rows.push(row);
+      if (row.some(cell => String(cell).trim() !== '')) rows.push(row);
       return rows;
     }
 
@@ -1404,7 +1410,7 @@
     }
 
     function buildQuestionsFromCsv(text) {
-      const rows = parseCSV(text);
+      const rows = parseDelimitedText(text);
       if (!rows.length) return [];
       const header = rows[0].map(cleanCell);
       let startIndex = 0;
@@ -1657,12 +1663,12 @@
           csvInput: csvInput.value
         };
         await setRemoteState(next);
-        showMessage('CSVを読み込みました。');
+        showMessage('問題データを読み込みました。');
       });
 
       sampleBtn.addEventListener('click', () => {
         csvInput.value = '番号,問題,答え,解説\n1,"夏目漱石の『こころ』で先生が遺書を託した相手は誰？",私,"物語は先生の遺書という形で過去が明かされる。"\n2,"日本で最も面積が大きい都道府県はどこ？",北海道,"一般的な答えは北海道。"\n3,"元素記号 Na で表される元素は何？",ナトリウム,"ラテン語名 natrium に由来する。"';
-        showMessage('サンプルCSVを入れました。「CSVを読み込む」を押してください。');
+        showMessage('サンプルCSVを入れました。「問題を読み込む」を押してください。');
       });
 
       connectBtn.addEventListener('click', connectFirebase);

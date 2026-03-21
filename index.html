@@ -1747,7 +1747,7 @@
               const damage = Number(rule.param2) || 0;
               nextState.players = nextState.players.map(p => {
                 if (p.id === id) return p;
-                const now = Number(p.attackPoint || (Number(rule.param1) || 30));
+                const now = Number((p.attackPoint ?? (Number(rule.param1) || 30)));
                 return { ...p, attackPoint: Math.max(0, now - damage) };
               });
             } else if (rule.type === 'swedish') {
@@ -1799,7 +1799,7 @@
               player.miss = Number(player.miss || 0) + addMiss;
             } else if (rule.type === 'attack_survival') {
               player.miss = Number(player.miss || 0) + 1;
-              const now = Number(player.attackPoint || (Number(rule.param1) || 30));
+              const now = Number((player.attackPoint ?? (Number(rule.param1) || 30)));
               player.attackPoint = Math.max(0, now - (Number(rule.param3) || 0));
             } else if (rule.type === 'by') {
               player.miss = Number(player.miss || 0) + 1;

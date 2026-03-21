@@ -731,7 +731,8 @@
       timerRevealScores: false,
       timerFinished: false,
       hasSyncedFromFirebase: false,
-      qualifierCount: 1
+      qualifierCount: 1,
+      rankSequence: 0
     };
 
     const localHistory = [];
@@ -821,7 +822,9 @@
         pendingRest: 0,
         attackPoint: rule.type === 'attack_survival' ? (Number(rule.param1) || 30) : 0,
         standingCorrect: false,
-        standingMiss: false
+        standingMiss: false,
+        winOrder: 0,
+        loseOrder: 0
       }));
     }
 
@@ -988,6 +991,19 @@
       return url.toString();
     }
 
+
+    function stampIfFinished(nextState, player) {
+      const status = getBaseStatus(player);
+      if (status === '勝抜' && !player.winOrder) {
+        nextState.rankSequence = Number(nextState.rankSequence || 0) + 1;
+        player.winOrder = Number(nextState.rankSequence);
+      }
+      if (status === '失格' && !player.loseOrder) {
+        nextState.rankSequence = Number(nextState.rankSequence || 0) + 1;
+        player.loseOrder = Number(nextState.rankSequence);
+      }
+    }
+
     function getBaseStatus(player) {
       const rule = state.ruleConfig || { type: 'maru_batsu' };
       if (rule.type === 'divide') {
@@ -1110,8 +1126,24 @@
           const sa = getStatus(a);
           const sb = getStatus(b);
           if (order[sa] !== order[sb]) return order[sa] - order[sb];
-          if (b.correct !== a.correct) return b.correct - a.correct;
-          if (a.miss !== b.miss) return a.miss - b.miss;
+
+          if (sa === '勝抜' && sb === '勝抜') {
+            const aw = Number(a.winOrder || 0);
+            const bw = Number(b.winOrder || 0);
+            if (aw !== bw) return aw - bw;
+          }
+
+          if ((sa === '進行中' || sa === '判定') && (sb === '進行中' || sb === '判定')) {
+            if (b.correct !== a.correct) return b.correct - a.correct;
+            if (a.miss !== b.miss) return a.miss - b.miss;
+          }
+
+          if (sa === '失格' && sb === '失格') {
+            const al = Number(a.loseOrder || 0);
+            const bl = Number(b.loseOrder || 0);
+            if (al !== bl) return al - bl;
+          }
+
           return a.name.localeCompare(b.name, 'ja');
         });
       } else {
@@ -1445,7 +1477,8 @@
           timerRevealScores: !!val.timerRevealScores,
           timerFinished: !!val.timerFinished,
           hasSyncedFromFirebase: true,
-          qualifierCount: Number(val.qualifierCount || 1)
+          qualifierCount: Number(val.qualifierCount || 1),
+          rankSequence: Number(val.rankSequence || 0)
         };
         render();
       });

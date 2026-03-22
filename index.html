@@ -422,6 +422,36 @@
       .summary { grid-template-columns: repeat(2, 1fr); }
       .controller-score-area { position: static; }
     }
+      @media (max-width: 1100px) {
+      .wrap { grid-template-columns: 1fr; }
+      .teams { grid-template-columns: 1fr; }
+      .hero { grid-template-columns: 1fr; }
+      .centerbox { min-width: 0; }
+    }
+
+    @media (max-width: 480px) {
+      body.presenter-mode .hero {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      body.presenter-mode .centerbox {
+        grid-column: 1 / -1;
+        order: -1;
+      }
+      body.presenter-mode .scorebox {
+        padding: 10px 8px;
+      }
+      body.presenter-mode .scorebox .team {
+        font-size: 13px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      body.presenter-mode .scorebox .score {
+        font-size: clamp(24px, 9vw, 40px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -691,6 +721,7 @@
     const resetRemoteBtn = document.getElementById('resetRemoteBtn');
     const ruleTypeSelect = document.getElementById('ruleTypeSelect');
     const ruleLabelInput = document.getElementById('ruleLabelInput');
+    if (ruleLabelInput) ruleLabelInput.readOnly = true;
     const ruleParam1 = document.getElementById('ruleParam1');
     const ruleParam2 = document.getElementById('ruleParam2');
     const ruleParam3 = document.getElementById('ruleParam3');
@@ -769,11 +800,31 @@
       return '';
     }
 
+    function makeRuleLabel(rule) {
+      const cfg = rule || state.ruleConfig || { type: 'maru_batsu' };
+      const t = cfg.type;
+      const p1 = Number(cfg.param1 || 0);
+      const p2 = Number(cfg.param2 || 0);
+
+      if (t === 'maru_batsu') return `${p1}〇${p2}×`;
+      if (t === 'maru_rest') return `${p1}〇${p2}休`;
+      if (t === 'freeze') return `Freeze ${p1}`;
+      if (t === 'up_down') return `${p1} Up Down`;
+      if (t === 'by') return `${p1}By${p2}`;
+      if (t === 'swedish') return `Swedish ${p1}`;
+      if (t === 'divide') return `Divide`;
+      if (t === 'timerace') return `Timerace`;
+      if (t === 'combo_correct') return `連答付き${p1}〇${p2}×`;
+      if (t === 'combo_miss') return `連誤答付き${p1}〇${p2}×`;
+      if (t === 'attack_survival') return `Attack survival`;
+      return cfg.label || '';
+    }
+
     function applyPresetToInputs(type) {
       const preset = RULE_PRESETS[type];
       if (!preset || !ruleTypeSelect) return;
       ruleTypeSelect.value = type;
-      ruleLabelInput.value = preset.label;
+      ruleLabelInput.value = makeRuleLabel({ type, param1: preset.p1, param2: preset.p2, param3: preset.p3, label: preset.label });
       ruleParam1.value = preset.p1;
       ruleParam2.value = preset.p2;
       ruleParam3.value = preset.p3;
@@ -790,7 +841,7 @@
       const type = state.ruleConfig.type || 'maru_batsu';
       applyPresetToInputs(type);
       ruleTypeSelect.value = type;
-      ruleLabelInput.value = state.ruleConfig.label || RULE_PRESETS[type].label;
+      ruleLabelInput.value = makeRuleLabel(state.ruleConfig);
       ruleParam1.value = state.ruleConfig.param1 ?? RULE_PRESETS[type].p1;
       ruleParam2.value = state.ruleConfig.param2 ?? RULE_PRESETS[type].p2;
       ruleParam3.value = state.ruleConfig.param3 ?? RULE_PRESETS[type].p3;
@@ -799,7 +850,7 @@
     function readRuleConfigFromInputs() {
       return {
         type: ruleTypeSelect.value,
-        label: ruleLabelInput.value.trim() || RULE_PRESETS[ruleTypeSelect.value].label,
+        label: makeRuleLabel({ type: ruleTypeSelect.value, param1: Number(ruleParam1.value)||0, param2: Number(ruleParam2.value)||0, param3: Number(ruleParam3.value)||0 }),
         param1: Number(ruleParam1.value) || 0,
         param2: Number(ruleParam2.value) || 0,
         param3: Number(ruleParam3.value) || 0
@@ -839,6 +890,8 @@
 
     function isCorrectReach(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      const status = getStatus(player);
+      if (status === '勝抜' || status === '失格') return false;
       if (rule.type === 'timerace' || rule.type === 'attack_survival') return false;
       if (rule.type === 'divide') {
         const current = Number(player.currentPoint || 0);
@@ -850,11 +903,18 @@
         const nxt = (Number(player.correct || 0) + 1) * missPoint;
         return now < getRuleWinScore(rule) && nxt >= getRuleWinScore(rule);
       }
+      if (rule.type === 'combo_correct') {
+        const remain = getRuleWinScore(rule) - Number(player.correct || 0);
+        if (player.standingCorrect) return remain === 1 || remain === 2;
+        return remain === 1;
+      }
       return Number(player.correct || 0) === getRuleWinScore(rule) - 1;
     }
 
     function isMissReach(player, ruleConfig) {
       const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      const status = getStatus(player);
+      if (status === '勝抜' || status === '失格') return false;
       if (rule.type === 'attack_survival') {
         const now = Number(player.attackPoint || 0);
         return now > 0 && now <= (Number(rule.param3) || 0);
@@ -879,7 +939,10 @@
         else if (c >= 6) addMiss = 4;
         return Number(player.miss || 0) + addMiss >= (Number(rule.param2) || 10);
       }
-      if (rule.type === 'combo_miss') return Number(player.miss || 0) >= (Number(rule.param2) || 3) - 2;
+      if (rule.type === 'combo_miss') {
+        if (!player.standingMiss) return false;
+        return Number(player.miss || 0) + 2 >= (Number(rule.param2) || 3);
+      }
       return Number(getDisplayedMiss(player, rule)) === Number(state.loseMiss || 3) - 1;
     }
 
@@ -933,13 +996,22 @@
       return (rule.type === 'maru_rest' || rule.type === 'freeze') && Number(player.restRemaining || 0) > 0;
     }
 
+    function getSwedishNextMissAdd(player) {
+      const c = Number(player.correct || 0);
+      if (c >= 1 && c <= 2) return 2;
+      if (c >= 3 && c <= 5) return 3;
+      if (c >= 6) return 4;
+      return 1;
+    }
+
     function getShownStatus(player) {
-      const rule = state.ruleConfig || { type: 'maru_batsu' };
       const base = getStatus(player);
+      const rule = state.ruleConfig || { type: 'maru_batsu' };
       if (base === '勝抜' || base === '失格') return base;
       if (isResting(player, rule)) return '休み(' + Number(player.restRemaining || 0) + ')';
       if (rule.type === 'combo_correct' && player.standingCorrect) return '起立状態';
       if (rule.type === 'combo_miss' && player.standingMiss) return '起立状態';
+      if (rule.type === 'swedish') return '+' + getSwedishNextMissAdd(player) + '×';
       return base;
     }
 
@@ -1127,26 +1199,37 @@
       const list = clonePlayers(state.players);
       if (state.presenterRanked) {
         list.sort((a, b) => {
-          const order = { '勝抜': 0, '進行中': 1, '判定': 1, '失格': 2 };
           const sa = getStatus(a);
           const sb = getStatus(b);
-          if (order[sa] !== order[sb]) return order[sa] - order[sb];
 
-          if (sa === '勝抜' && sb === '勝抜') {
+          // 1) 勝抜ブロック
+          if (sa === '勝抜' || sb === '勝抜') {
+            if (sa === '勝抜' && sb !== '勝抜') return -1;
+            if (sa !== '勝抜' && sb === '勝抜') return 1;
             const aw = Number(a.winOrder || 0);
             const bw = Number(b.winOrder || 0);
             if (aw !== bw) return aw - bw;
+            return a.name.localeCompare(b.name, 'ja');
           }
 
-          if ((sa === '進行中' || sa === '判定') && (sb === '進行中' || sb === '判定')) {
-            if (b.correct !== a.correct) return b.correct - a.correct;
-            if (a.miss !== b.miss) return a.miss - b.miss;
-          }
-
-          if (sa === '失格' && sb === '失格') {
+          // 2) 失格ブロック
+          if (sa === '失格' || sb === '失格') {
+            if (sa === '失格' && sb !== '失格') return 1;
+            if (sa !== '失格' && sb === '失格') return -1;
             const al = Number(a.loseOrder || 0);
             const bl = Number(b.loseOrder || 0);
-            if (al !== bl) return al - bl;
+            if (al !== bl) return bl - al;
+            return a.name.localeCompare(b.name, 'ja');
+          }
+
+          // 3) 〇数
+          if (Number(b.correct || 0) !== Number(a.correct || 0)) {
+            return Number(b.correct || 0) - Number(a.correct || 0);
+          }
+
+          // 4) ×数
+          if (Number(a.miss || 0) !== Number(b.miss || 0)) {
+            return Number(a.miss || 0) - Number(b.miss || 0);
           }
 
           return a.name.localeCompare(b.name, 'ja');
@@ -1225,7 +1308,7 @@
           `<td class="point-big" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</td>` +
           `<td class="score-big ${isCorrectReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedCorrect(player, state.ruleConfig)}</td>` +
           `<td class="miss-big ${isMissReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedMiss(player, state.ruleConfig)}</td>` +
-          `<td><span class="status ${statusClass} ${((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect) ? 'status-stand-correct' : (((state.ruleConfig || {}).type === 'combo_miss' && player.standingMiss) ? 'status-stand-miss' : '')}">${shownStatus}</span></td>` +
+          `<td><span class="status ${statusClass} ${((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect) ? 'status-stand-correct' : (((state.ruleConfig || {}).type === 'combo_miss' && player.standingMiss) ? 'status-stand-miss' : '')} ${((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect && (Number(player.correct || 0) + 2 >= getRuleWinScore(state.ruleConfig))) ? 'cell-reach' : ''}">${shownStatus}</span></td>` +
           (forPresenter ? '' :
             `<td>
               <button class="small success" data-action="correct" data-id="${player.id}">正解+1</button>
@@ -1510,9 +1593,23 @@
         showMessage('全員の得点をリセットしました。');
       });
 
+      function refreshRuleLabel() {
+        if (!ruleLabelInput) return;
+        ruleLabelInput.value = makeRuleLabel({
+          type: ruleTypeSelect.value,
+          param1: Number(ruleParam1.value) || 0,
+          param2: Number(ruleParam2.value) || 0,
+          param3: Number(ruleParam3.value) || 0
+        });
+      }
+
       ruleTypeSelect.addEventListener('change', () => {
         applyPresetToInputs(ruleTypeSelect.value);
+        refreshRuleLabel();
       });
+      if (ruleParam1) ruleParam1.addEventListener('input', refreshRuleLabel);
+      if (ruleParam2) ruleParam2.addEventListener('input', refreshRuleLabel);
+      if (ruleParam3) ruleParam3.addEventListener('input', refreshRuleLabel);
 
       applyRuleBtn.addEventListener('click', async () => {
         pushHistory();

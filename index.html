@@ -449,9 +449,14 @@
     body.presenter-mode .controller-score-area table td:nth-child(6) {
       display: none;
     }
+    body.presenter-mode .controller-score-area {
+      margin-left: -8px;
+      margin-right: -8px;
+    }
     body.presenter-mode .controller-score-area .table-wrap {
       overflow-x: hidden;
-      padding-right: 2px;
+      padding-left: 0;
+      padding-right: 0;
     }
     body.presenter-mode .controller-score-area table {
       table-layout: fixed;
@@ -460,36 +465,40 @@
     body.presenter-mode .controller-score-area table th,
     body.presenter-mode .controller-score-area table td {
       min-width: 0;
+      padding-left: 2px;
+      padding-right: 2px;
     }
     body.presenter-mode .controller-score-area table th:nth-child(1),
-    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 28px; }
+    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 26px; }
     body.presenter-mode .controller-score-area table th:nth-child(2),
     body.presenter-mode .controller-score-area table td:nth-child(2) { width: auto; }
     body.presenter-mode .controller-score-area table th:nth-child(3),
-    body.presenter-mode .controller-score-area table td:nth-child(3) { width: 68px; }
+    body.presenter-mode .controller-score-area table td:nth-child(3) { width: 76px; }
     body.presenter-mode .controller-score-area table th:nth-child(4),
     body.presenter-mode .controller-score-area table td:nth-child(4),
     body.presenter-mode .controller-score-area table th:nth-child(5),
-    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 42px; }
+    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 38px; }
 
     body.presenter-mode .controller-score-area thead th {
-      font-size: 12px;
-      padding-left: 2px;
-      padding-right: 2px;
-      letter-spacing: -0.02em;
+      font-size: 11px;
+      padding-left: 1px;
+      padding-right: 1px;
+      letter-spacing: -0.03em;
       white-space: nowrap;
     }
     body.presenter-mode .controller-score-area td.name {
       font-size: 16px;
+      padding-left: 0;
+      padding-right: 2px;
     }
     body.presenter-mode .controller-score-area td.point-big {
-      font-size: clamp(22px, 6.2vw, 30px);
-      letter-spacing: -0.05em;
+      font-size: clamp(18px, 5.5vw, 26px);
+      letter-spacing: -0.07em;
     }
     body.presenter-mode .controller-score-area td.score-big,
     body.presenter-mode .controller-score-area td.miss-big {
-      font-size: clamp(18px, 5.2vw, 24px);
-      letter-spacing: -0.03em;
+      font-size: clamp(16px, 4.6vw, 21px);
+      letter-spacing: -0.04em;
     }
     body.presenter-mode .controller-score-area td.point-big,
     body.presenter-mode .controller-score-area td.score-big,
@@ -499,6 +508,9 @@
       text-overflow: clip;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum" 1;
+    }
+    body.presenter-mode .controller-score-area td.miss-big .miss-note {
+      font-size: 10px;
     }
 
     @media (max-width: 480px) {
@@ -523,21 +535,28 @@
       body.presenter-mode .scorebox .score {
         font-size: clamp(24px, 9vw, 40px);
       }
+      body.presenter-mode .controller-score-area {
+        margin-left: -10px;
+        margin-right: -10px;
+      }
       body.presenter-mode .controller-score-area td.name {
-        font-size: 15px;
+        font-size: 14px;
       }
       body.presenter-mode .controller-score-area table th:nth-child(3),
-      body.presenter-mode .controller-score-area table td:nth-child(3) { width: 62px; }
+      body.presenter-mode .controller-score-area table td:nth-child(3) { width: 72px; }
       body.presenter-mode .controller-score-area table th:nth-child(4),
       body.presenter-mode .controller-score-area table td:nth-child(4),
       body.presenter-mode .controller-score-area table th:nth-child(5),
-      body.presenter-mode .controller-score-area table td:nth-child(5) { width: 40px; }
+      body.presenter-mode .controller-score-area table td:nth-child(5) { width: 36px; }
       body.presenter-mode .controller-score-area td.point-big {
-        font-size: clamp(20px, 6vw, 26px);
+        font-size: clamp(17px, 5.2vw, 22px);
       }
       body.presenter-mode .controller-score-area td.score-big,
       body.presenter-mode .controller-score-area td.miss-big {
-        font-size: clamp(17px, 4.8vw, 22px);
+        font-size: clamp(15px, 4.2vw, 19px);
+      }
+      body.presenter-mode .controller-score-area td.miss-big .miss-note {
+        font-size: 9px;
       }
     }
   </style>

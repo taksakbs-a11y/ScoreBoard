@@ -429,6 +429,37 @@
       .centerbox { min-width: 0; }
     }
 
+
+    .miss-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      line-height: 1;
+    }
+    .miss-note {
+      font-size: 11px;
+      color: #cbd5e1;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    body.presenter-mode .controller-score-area table th:nth-child(6),
+    body.presenter-mode .controller-score-area table td:nth-child(6) {
+      display: none;
+    }
+    body.presenter-mode .controller-score-area table th:nth-child(1),
+    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 34px; }
+    body.presenter-mode .controller-score-area table th:nth-child(2),
+    body.presenter-mode .controller-score-area table td:nth-child(2) { width: auto; }
+    body.presenter-mode .controller-score-area table th:nth-child(3),
+    body.presenter-mode .controller-score-area table td:nth-child(3),
+    body.presenter-mode .controller-score-area table th:nth-child(4),
+    body.presenter-mode .controller-score-area table td:nth-child(4),
+    body.presenter-mode .controller-score-area table th:nth-child(5),
+    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 48px; }
+
     @media (max-width: 480px) {
       body.presenter-mode .hero {
         grid-template-columns: 1fr 1fr;
@@ -1004,6 +1035,24 @@
       return 1;
     }
 
+
+    function getPresenterMissNote(player) {
+      const rule = state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'maru_rest' || rule.type === 'freeze') {
+        const rest = Number(player.restRemaining || 0);
+        if (rest > 0) return '休' + rest;
+      }
+      if (rule.type === 'swedish') {
+        const c = Number(player.correct || 0);
+        let addMiss = 1;
+        if (c >= 1 && c <= 2) addMiss = 2;
+        else if (c >= 3 && c <= 5) addMiss = 3;
+        else if (c >= 6) addMiss = 4;
+        return '次+' + addMiss;
+      }
+      return '';
+    }
+
     function getShownStatus(player) {
       const base = getStatus(player);
       const rule = state.ruleConfig || { type: 'maru_batsu' };
@@ -1307,7 +1356,11 @@
           `<td class="name"></td>` +
           `<td class="point-big" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</td>` +
           `<td class="score-big ${isCorrectReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedCorrect(player, state.ruleConfig)}</td>` +
-          `<td class="miss-big ${isMissReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedMiss(player, state.ruleConfig)}</td>` +
+          `<td class="miss-big ${isMissReach(player, state.ruleConfig) ? 'cell-reach' : ''}">` +
+            (forPresenter
+              ? `<span class="miss-wrap"><span>${getDisplayedMiss(player, state.ruleConfig)}</span>${getPresenterMissNote(player) ? `<span class="miss-note">${getPresenterMissNote(player)}</span>` : ''}</span>`
+              : `${getDisplayedMiss(player, state.ruleConfig)}`) +
+          `</td>` +
           `<td><span class="status ${statusClass} ${((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect) ? 'status-stand-correct' : (((state.ruleConfig || {}).type === 'combo_miss' && player.standingMiss) ? 'status-stand-miss' : '')} ${((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect && (Number(player.correct || 0) + 2 >= getRuleWinScore(state.ruleConfig))) ? 'cell-reach' : ''}">${shownStatus}</span></td>` +
           (forPresenter ? '' :
             `<td>

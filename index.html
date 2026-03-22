@@ -263,30 +263,9 @@
       display: none !important;
     }
     body.presenter-mode #presenterView {
-      display: none !important;
-    }
-    body.presenter-mode #controllerView {
       display: block !important;
       max-width: 1400px;
       margin: 0 auto;
-    }
-    body.presenter-mode #controllerView .panel {
-      display: none !important;
-    }
-    body.presenter-mode #controllerView .main {
-      display: block;
-      padding: 0;
-      border: none;
-      background: transparent;
-      box-shadow: none;
-    }
-    body.presenter-mode #controllerView .actions-inline,
-    body.presenter-mode #controllerView td:last-child,
-    body.presenter-mode #controllerView th:last-child,
-    body.presenter-mode #controllerView #messageBox,
-    body.presenter-mode #controllerView #skipQuestionBtn,
-    body.presenter-mode #controllerView #ctrlTimerBox .btns {
-      display: none !important;
     }
     body.presenter-mode #controllerView .question-card {
       padding: 18px;
@@ -342,6 +321,109 @@
     body.presenter-mode #controllerView .table-wrap td:nth-child(5) { width: 44px; }
     body.presenter-mode #controllerView .table-wrap th:nth-child(6),
     body.presenter-mode #controllerView .table-wrap td:nth-child(6) { width: 72px; }
+
+    .presenter-score-head {
+      display: grid;
+      grid-template-columns: 28px minmax(0,1fr) 72px 42px 42px;
+      gap: 8px;
+      align-items: center;
+      color: #e5e7eb;
+      font-weight: 800;
+      font-size: 12px;
+      margin-bottom: 10px;
+      padding: 0 8px;
+    }
+    .presenter-player-grid {
+      display: grid;
+      gap: 10px;
+    }
+    .presenter-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0,1fr) 72px 42px 42px;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 12px 10px;
+      background: #06122f;
+    }
+    .presenter-row.win { background: rgba(22,163,74,0.14); }
+    .presenter-row.lose { background: rgba(220,38,38,0.14); }
+    .presenter-row.qualified { background: rgba(22,163,74,0.14); }
+    .presenter-row.resting { background: rgba(148,163,184,0.10); }
+    .presenter-rank {
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .presenter-name {
+      font-size: 26px;
+      font-weight: 800;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .presenter-num {
+      font-size: 24px;
+      font-weight: 800;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+    .presenter-point { color: #c4b5fd; }
+    .presenter-correct { color: #93c5fd; }
+    .presenter-miss { color: #fca5a5; }
+    .presenter-num.reach {
+      box-shadow: inset 0 0 0 3px #facc15;
+      border-radius: 10px;
+      padding: 4px 2px;
+    }
+    .presenter-miss-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      line-height: 1;
+    }
+    .presenter-miss-note {
+      font-size: 10px;
+      color: #cbd5e1;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .presenter-name.stand-correct {
+      box-shadow: inset 0 0 0 3px #facc15;
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+    .presenter-name.stand-miss {
+      box-shadow: inset 0 0 0 3px #ef4444;
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+    @media (max-width: 480px) {
+      .presenter-score-head,
+      .presenter-row {
+        grid-template-columns: 24px minmax(0,1fr) 64px 38px 38px;
+        gap: 6px;
+      }
+      .presenter-score-head {
+        font-size: 11px;
+        padding: 0 4px;
+      }
+      .presenter-row {
+        padding: 10px 8px;
+      }
+      .presenter-rank { font-size: 16px; }
+      .presenter-name { font-size: 20px; }
+      .presenter-num { font-size: 21px; }
+      .presenter-miss-note { font-size: 9px; }
+    }
+
     .presenter-grid {
       display: grid;
       grid-template-columns: 500px 1fr;
@@ -742,21 +824,14 @@
 <div id="presenterView" class="presenter-main">
     <div class="presenter-grid">
       <div class="presenter-left">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>順</th>
-                <th>名前</th>
-                <th id="presenterPointHeader" style="display:none;">得点</th>
-                <th id="presenterCorrectHeader">正解</th>
-                <th id="presenterMissHeader">誤答</th>
-                <th>状態</th>
-              </tr>
-            </thead>
-            <tbody id="presenterScoreTableBody"></tbody>
-          </table>
+        <div class="presenter-score-head">
+          <div>順</div>
+          <div>名前</div>
+          <div id="presenterPointHeader">得点</div>
+          <div id="presenterCorrectHeader">正解</div>
+          <div id="presenterMissHeader">誤答</div>
         </div>
+        <div id="presenterScoreGrid" class="presenter-player-grid"></div>
       </div>
 
       <div class="presenter-right">
@@ -1415,20 +1490,44 @@
     }
 
     function renderTable(tbodyId, forPresenter) {
-      const tbody = document.getElementById(tbodyId);
+      const container = document.getElementById(tbodyId);
       const displayPlayers = getDisplayPlayers(forPresenter);
-      tbody.innerHTML = '';
+      container.innerHTML = '';
 
       displayPlayers.forEach((player, i) => {
         const status = getStatus(player);
+        const rowClass = [
+          isResting(player, state.ruleConfig) ? 'resting' : '',
+          isQualifiedByRank(player, displayPlayers) ? 'qualified' : '',
+          status === '勝抜' ? 'win' : '',
+          status === '失格' ? 'lose' : ''
+        ].filter(Boolean).join(' ');
+
+        if (tbodyId === 'presenterScoreGrid') {
+          const note = getPresenterMissNote(player);
+          const row = document.createElement('div');
+          row.className = 'presenter-row ' + rowClass;
+          const nameClass = [
+            'presenter-name',
+            ((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect) ? 'stand-correct' : '',
+            ((state.ruleConfig || {}).type === 'combo_miss' && player.standingMiss) ? 'stand-miss' : ''
+          ].filter(Boolean).join(' ');
+          row.innerHTML =
+            `<div class="presenter-rank">${i + 1}</div>` +
+            `<div class="${nameClass}">${player.name}</div>` +
+            `<div class="presenter-num presenter-point">${getPointValue(player, state.ruleConfig)}</div>` +
+            `<div class="presenter-num presenter-correct ${isCorrectReach(player, state.ruleConfig) ? 'reach' : ''}">${getDisplayedCorrect(player, state.ruleConfig)}</div>` +
+            `<div class="presenter-num presenter-miss ${isMissReach(player, state.ruleConfig) ? 'reach' : ''}">` +
+              `<span class="presenter-miss-wrap"><span>${getDisplayedMiss(player, state.ruleConfig)}</span>${note ? `<span class="presenter-miss-note">${note}</span>` : ''}</span>` +
+            `</div>`;
+          container.appendChild(row);
+          return;
+        }
+
         const shownStatus = getShownStatus(player);
         const statusClass = getStatusClass(status);
         const tr = document.createElement('tr');
-        if (isResting(player, state.ruleConfig)) tr.className = 'resting';
-        if (isQualifiedByRank(player, displayPlayers)) tr.className = 'qualified';
-        if (status === '勝抜') tr.className = 'win';
-        if (status === '失格') tr.className = 'lose';
-
+        tr.className = rowClass;
         tr.innerHTML =
           `<td>${i + 1}</td>` +
           `<td class="name"></td>` +
@@ -1446,9 +1545,8 @@
               <button class="small danger" data-action="miss" data-id="${player.id}">誤答+1</button>
               <button class="small secondary" data-action="resetRow" data-id="${player.id}">リセット</button>
             </td>`);
-
         tr.querySelector('.name').textContent = player.name;
-        tbody.appendChild(tr);
+        container.appendChild(tr);
       });
 
       return displayPlayers;
@@ -1532,7 +1630,7 @@
 
     function render() {
       const controllerPlayers = renderTable('ctrlScoreTableBody', false);
-      const presenterPlayers = renderTable('presenterScoreTableBody', true);
+      const presenterPlayers = renderTable('presenterScoreGrid', true);
 
       renderQuestionSection('ctrl');
       renderQuestionSection('presenter');

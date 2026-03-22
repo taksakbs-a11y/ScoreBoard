@@ -463,8 +463,8 @@
     }
     body.presenter-mode .controller-score-area table {
       table-layout: fixed;
-      width: calc(100% - 2px);
-      margin-left: -6px;
+      width: 100%;
+      margin-left: 0;
       margin-right: 0;
     }
     body.presenter-mode .controller-score-area table th,
@@ -474,15 +474,15 @@
       padding-right: 1px;
     }
     body.presenter-mode .controller-score-area table th:nth-child(1),
-    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 20px; }
+    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 22px; }
     body.presenter-mode .controller-score-area table th:nth-child(2),
     body.presenter-mode .controller-score-area table td:nth-child(2) { width: auto; }
     body.presenter-mode .controller-score-area table th:nth-child(3),
-    body.presenter-mode .controller-score-area table td:nth-child(3) { width: 78px; }
+    body.presenter-mode .controller-score-area table td:nth-child(3) { width: 76px; }
     body.presenter-mode .controller-score-area table th:nth-child(4),
     body.presenter-mode .controller-score-area table td:nth-child(4),
     body.presenter-mode .controller-score-area table th:nth-child(5),
-    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 34px; }
+    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 38px; }
 
     body.presenter-mode .controller-score-area thead th {
       font-size: 10px;
@@ -492,7 +492,7 @@
       white-space: nowrap;
     }
     body.presenter-mode .controller-score-area td.name {
-      font-size: 13px;
+      font-size: 12px;
       padding-left: 0;
       padding-right: 0;
     }
@@ -500,21 +500,13 @@
     body.presenter-mode .controller-score-area td.score-big,
     body.presenter-mode .controller-score-area td.miss-big {
       font-size: clamp(18px, 5vw, 23px);
-      letter-spacing: -0.05em;
+      letter-spacing: -0.04em;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: clip;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum" 1;
       text-align: left;
-    }
-    body.presenter-mode .controller-score-area td.point-big,
-    body.presenter-mode .controller-score-area td.score-big,
-    body.presenter-mode .controller-score-area td.miss-big,
-    body.presenter-mode .controller-score-area table th:nth-child(3),
-    body.presenter-mode .controller-score-area table th:nth-child(4),
-    body.presenter-mode .controller-score-area table th:nth-child(5) {
-      transform: translateX(-4px);
     }
     body.presenter-mode .controller-score-area td.miss-big .miss-note {
       font-size: 9px;
@@ -547,8 +539,8 @@
         margin-right: 0;
       }
       body.presenter-mode .controller-score-area table {
-        width: calc(100% - 2px);
-        margin-left: -5px;
+        width: 100%;
+        margin-left: 0;
       }
       body.presenter-mode .controller-score-area td.name {
         font-size: 12px;
@@ -558,20 +550,12 @@
       body.presenter-mode .controller-score-area table th:nth-child(4),
       body.presenter-mode .controller-score-area table td:nth-child(4),
       body.presenter-mode .controller-score-area table th:nth-child(5),
-      body.presenter-mode .controller-score-area table td:nth-child(5) { width: 32px; }
+      body.presenter-mode .controller-score-area table td:nth-child(5) { width: 36px; }
       body.presenter-mode .controller-score-area td.point-big,
       body.presenter-mode .controller-score-area td.score-big,
       body.presenter-mode .controller-score-area td.miss-big {
         font-size: clamp(17px, 4.6vw, 20px);
-        letter-spacing: -0.05em;
-      }
-      body.presenter-mode .controller-score-area td.point-big,
-      body.presenter-mode .controller-score-area td.score-big,
-      body.presenter-mode .controller-score-area td.miss-big,
-      body.presenter-mode .controller-score-area table th:nth-child(3),
-      body.presenter-mode .controller-score-area table th:nth-child(4),
-      body.presenter-mode .controller-score-area table th:nth-child(5) {
-        transform: translateX(-4px);
+        letter-spacing: -0.04em;
       }
       body.presenter-mode .controller-score-area td.miss-big .miss-note {
         font-size: 8px;

@@ -454,7 +454,7 @@
       width: 100%;
     }
     body.presenter-mode .controller-score-area table th:nth-child(1),
-    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 32px; }
+    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 30px; }
     body.presenter-mode .controller-score-area table th:nth-child(2),
     body.presenter-mode .controller-score-area table td:nth-child(2) { width: auto; }
     body.presenter-mode .controller-score-area table th:nth-child(3),
@@ -462,7 +462,7 @@
     body.presenter-mode .controller-score-area table th:nth-child(4),
     body.presenter-mode .controller-score-area table td:nth-child(4),
     body.presenter-mode .controller-score-area table th:nth-child(5),
-    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 54px; }
+    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 58px; }
 
     @media (max-width: 480px) {
       body.presenter-mode .hero {
@@ -1361,7 +1361,7 @@
           `<td class="point-big" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</td>` +
           `<td class="score-big ${isCorrectReach(player, state.ruleConfig) ? 'cell-reach' : ''}">${getDisplayedCorrect(player, state.ruleConfig)}</td>` +
           `<td class="miss-big ${isMissReach(player, state.ruleConfig) ? 'cell-reach' : ''}">` +
-            (forPresenter
+            (isPresenter
               ? `<span class="miss-wrap"><span>${getDisplayedMiss(player, state.ruleConfig)}</span>${getPresenterMissNote(player) ? `<span class="miss-note">${getPresenterMissNote(player)}</span>` : ''}</span>`
               : `${getDisplayedMiss(player, state.ruleConfig)}`) +
           `</td>` +

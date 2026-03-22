@@ -449,8 +449,12 @@
     body.presenter-mode .controller-score-area table td:nth-child(6) {
       display: none;
     }
+    body.presenter-mode .controller-score-area table {
+      table-layout: fixed;
+      width: 100%;
+    }
     body.presenter-mode .controller-score-area table th:nth-child(1),
-    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 34px; }
+    body.presenter-mode .controller-score-area table td:nth-child(1) { width: 32px; }
     body.presenter-mode .controller-score-area table th:nth-child(2),
     body.presenter-mode .controller-score-area table td:nth-child(2) { width: auto; }
     body.presenter-mode .controller-score-area table th:nth-child(3),
@@ -458,7 +462,7 @@
     body.presenter-mode .controller-score-area table th:nth-child(4),
     body.presenter-mode .controller-score-area table td:nth-child(4),
     body.presenter-mode .controller-score-area table th:nth-child(5),
-    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 48px; }
+    body.presenter-mode .controller-score-area table td:nth-child(5) { width: 54px; }
 
     @media (max-width: 480px) {
       body.presenter-mode .hero {
@@ -1040,7 +1044,7 @@
       const rule = state.ruleConfig || { type: 'maru_batsu' };
       if (rule.type === 'maru_rest' || rule.type === 'freeze') {
         const rest = Number(player.restRemaining || 0);
-        if (rest > 0) return '休' + rest;
+        if (rest > 0) return 'Lock ' + rest;
       }
       if (rule.type === 'swedish') {
         const c = Number(player.correct || 0);
@@ -1048,7 +1052,7 @@
         if (c >= 1 && c <= 2) addMiss = 2;
         else if (c >= 3 && c <= 5) addMiss = 3;
         else if (c >= 6) addMiss = 4;
-        return '次+' + addMiss;
+        return '+' + addMiss;
       }
       return '';
     }

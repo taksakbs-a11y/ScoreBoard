@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>クイズ得点板 表示用</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .panel, .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .panel, .card { padding: 14px; }
+    .topline {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 900;
+    }
+    .sub {
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #0b1220;
+      border: 1px solid #334155;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .room-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .room-controls input {
+      flex: 1 1 220px;
+      min-width: 0;
+      background: #0b1220;
+      color: #e5e7eb;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    .room-controls button {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #2563eb;
+      color: #fff;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+    .rule-box {
+      min-width: 0;
+    }
+    .rule-name {
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+    .question-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+    .question-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin: 0 0 8px;
+    }
+    .question-text {
+      font-size: 22px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .answer-box, .explanation-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #0b1220;
+      border: 1px solid #334155;
+      font-size: 18px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .timer-wrap {
+      margin-top: 12px;
+      display: none;
+    }
+    .timer-bar-wrap {
+      position: relative;
+      width: 100%;
+      height: 34px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(148,163,184,0.18);
+      border: 1px solid #475569;
+    }
+    .timer-bar-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(59,130,246,0.9), rgba(14,165,233,0.9));
+      transition: width 0.8s linear;
+    }
+    .timer-bar-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+      z-index: 2;
+      font-size: 18px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .mini-card {
+      background: #0b1220;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .mini-card .label {
+      color: #94a3b8;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .mini-card .value {
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    .score-head {
+      display: grid;
+      grid-template-columns: 28px minmax(0,1fr) 76px 44px 52px;
+      gap: 8px;
+      align-items: center;
+      color: #e5e7eb;
+      font-weight: 800;
+      font-size: 12px;
+      margin-bottom: 10px;
+      padding: 0 8px;
+    }
+    .score-grid {
+      display: grid;
+      gap: 10px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 28px minmax(0,1fr) 76px 44px 52px;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 12px 10px;
+      background: #06122f;
+      width: 100%;
+    }
+    .row.win { background: rgba(22,163,74,0.14); }
+    .row.lose { background: rgba(220,38,38,0.14); }
+    .row.qualified { background: rgba(22,163,74,0.14); }
+    .row.resting { background: rgba(148,163,184,0.10); }
+
+    .rank {
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .name {
+      font-size: 24px;
+      font-weight: 800;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 6px 8px;
+      border-radius: 12px;
+    }
+    .name.stand-correct {
+      box-shadow: inset 0 0 0 3px #facc15;
+    }
+    .name.stand-miss {
+      box-shadow: inset 0 0 0 3px #ef4444;
+    }
+
+    .num {
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      border-radius: 10px;
+      padding: 4px 2px;
+    }
+    .point { color: #c4b5fd; }
+    .correct { color: #93c5fd; }
+    .miss { color: #fca5a5; }
+    .reach {
+      box-shadow: inset 0 0 0 3px #facc15;
+    }
+    .miss-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      line-height: 1;
+    }
+    .miss-note {
+      font-size: 10px;
+      color: #cbd5e1;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .loading {
+      color: #94a3b8;
+      font-size: 14px;
+      text-align: center;
+      padding: 30px 10px;
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 10px; }
+      .question-text { font-size: 18px; }
+      .answer-box, .explanation-box { font-size: 15px; }
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .score-head, .row {
+        grid-template-columns: 24px minmax(0,1fr) 68px 40px 44px;
+        gap: 6px;
+      }
+      .score-head {
+        font-size: 11px;
+        padding: 0 4px;
+      }
+      .row {
+        padding: 10px 8px;
+      }
+      .rank { font-size: 16px; }
+      .name { font-size: 20px; }
+      .num { font-size: 20px; }
+      .miss-note { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="topline">
+        <div class="title">クイズ得点板 表示用</div>
+        <div class="pill" id="roomPill">room: -</div>
+      </div>
+      <div class="sub">同じ room の Firebase データを読み込んで表示します。</div>
+      <div class="room-controls">
+        <input id="roomInput" value="quiz-room-1" />
+        <button id="connectBtn">roomを開く</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hero">
+        <div class="rule-box">
+          <div class="sub" style="margin-bottom:4px;">現在のルール</div>
+          <div id="ruleName" class="rule-name">-</div>
+          <div id="ruleDetail" class="sub">-</div>
+        </div>
+        <div id="questionProgress" class="pill">0 / 0</div>
+      </div>
+
+      <div id="timerWrap" class="timer-wrap">
+        <div class="timer-bar-wrap">
+          <div id="timerFill" class="timer-bar-fill"></div>
+          <div id="timerText" class="timer-bar-text">0:00</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="question-meta">
+          <div>
+            <div class="sub" style="margin-bottom:4px;">直前に確定した問題</div>
+            <div id="questionTitle" class="question-title">まだありません</div>
+          </div>
+        </div>
+        <div id="questionText" class="question-text">正解または誤答が入ると、直前の問題・答え・解説がここに表示されます。</div>
+        <div id="answerBox" class="answer-box">答え：</div>
+        <div id="explanationBox" class="explanation-box">解説：</div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="mini-card"><div class="label">参加者数</div><div id="totalPlayers" class="value">0</div></div>
+      <div class="mini-card"><div class="label">進行中</div><div id="playingCount" class="value">0</div></div>
+      <div class="mini-card"><div class="label">勝抜</div><div id="winCount" class="value">0</div></div>
+      <div class="mini-card"><div class="label">失格</div><div id="loseCount" class="value">0</div></div>
+    </div>
+
+    <div class="card">
+      <div class="score-head" id="scoreHead">
+        <div>順</div>
+        <div>名前</div>
+        <div id="pointHeader" style="display:none;">得点</div>
+        <div id="correctHeader">正解</div>
+        <div id="missHeader">誤答</div>
+      </div>
+      <div id="scoreGrid" class="score-grid">
+        <div class="loading">読み込み中...</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDdRTfcxOanifQtFQ3pbTEOYn9HNhIzwx0",
+      authDomain: "scoreboard-74fbb.firebaseapp.com",
+      databaseURL: "https://scoreboard-74fbb-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "scoreboard-74fbb",
+      storageBucket: "scoreboard-74fbb.firebasestorage.app",
+      messagingSenderId: "228755602601",
+      appId: "1:228755602601:web:2935fe35e9dd5a4265bdb8",
+      measurementId: "G-8HEYQY19L8"
+    };
+
+    const params = new URLSearchParams(location.search);
+    let currentRoom = params.get('room') || 'quiz-room-1';
+    const roomInput = document.getElementById('roomInput');
+    const roomPill = document.getElementById('roomPill');
+    const connectBtn = document.getElementById('connectBtn');
+    roomInput.value = currentRoom;
+    roomPill.textContent = 'room: ' + currentRoom;
+
+    let state = {
+      players: [],
+      questions: [],
+      currentQuestionIndex: 0,
+      lastJudgedIndex: -1,
+      presenterRanked: false,
+      qualifierCount: 1,
+      winScore: 7,
+      loseMiss: 3,
+      timerRunning: false,
+      timerPaused: false,
+      timerFinished: false,
+      timerEndAt: 0,
+      timerRemainingMs: 0,
+      timerRevealScores: false,
+      ruleConfig: { type: 'maru_batsu', label: '7〇3×', param1: 7, param2: 3, param3: 0 }
+    };
+
+    const RULE_PRESETS = {
+      maru_batsu: { label: '7〇3×', p1: 7, p2: 3, p3: 0 },
+      maru_rest: { label: '7〇1休', p1: 7, p2: 1, p3: 0 },
+      freeze: { label: 'Freeze 10', p1: 10, p2: 0, p3: 0 },
+      up_down: { label: '10 Up Down', p1: 10, p2: 0, p3: 0 },
+      by: { label: '10By10', p1: 10, p2: 10, p3: 6 },
+      swedish: { label: 'Swedish 10', p1: 10, p2: 10, p3: 0 },
+      divide: { label: 'Divide', p1: 10, p2: 100, p3: 0 },
+      timerace: { label: 'Timerace', p1: 5, p2: 1, p3: -1 },
+      combo_correct: { label: '連答付き5〇2×', p1: 5, p2: 2, p3: 0 },
+      combo_miss: { label: '連誤答付き5〇3×', p1: 5, p2: 3, p3: 0 },
+      attack_survival: { label: 'Attack survival', p1: 30, p2: 2, p3: 3 }
+    };
+
+    function clonePlayers(list) { return (list || []).map(p => ({ ...p })); }
+
+    function formatTimer(ms) {
+      const totalMs = Math.max(0, Number(ms || 0));
+      const sec = Math.ceil(totalMs / 1000);
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return String(m) + ':' + String(s).padStart(2, '0');
+    }
+
+    function isPointRule(ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      return ['by', 'divide', 'timerace', 'attack_survival'].includes(rule.type);
+    }
+
+    function getRuleWinScore(ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'divide') return Number(rule.param2) || 100;
+      if (rule.type === 'up_down') return Number(rule.param1) || 10;
+      if (rule.type === 'by') return (Number(rule.param1) || 10) * (Number(rule.param2) || 10);
+      if (rule.type === 'swedish') return Number(rule.param1) || 10;
+      if (rule.type === 'combo_correct' || rule.type === 'combo_miss') return Number(rule.param1) || 5;
+      return Number(state.winScore || 7);
+    }
+
+    function getRuleDetailText(rule) {
+      if (!rule) return '';
+      const t = rule.type;
+      if (t === 'maru_batsu') return '勝ち抜け ' + rule.param1 + ' / 失格 ' + rule.param2;
+      if (t === 'maru_rest') return '勝ち抜け ' + rule.param1 + ' / 誤答で ' + rule.param2 + '休';
+      if (t === 'freeze') return '勝ち抜け ' + rule.param1 + ' / 誤答回数分休み';
+      if (t === 'up_down') return '勝ち抜け ' + rule.param1 + ' / 1×で0点 / 2×で失格';
+      if (t === 'by') return '初期誤答点 ' + rule.param1 + ' / By値 ' + rule.param2 + ' / 失格 ' + (rule.param3 || 6) + '×';
+      if (t === 'swedish') return '勝ち抜け ' + rule.param1 + '〇 / 失格 ' + rule.param2 + '×';
+      if (t === 'divide') return '初期点 ' + rule.param1 + ' / 勝ち抜け ' + rule.param2;
+      if (t === 'timerace') return rule.param1 + '分 / 正解 +' + rule.param2 + ' / 誤答 ' + rule.param3;
+      if (t === 'combo_correct') return '勝ち抜け ' + rule.param1 + '〇 / 失格 ' + rule.param2 + '×';
+      if (t === 'combo_miss') return '勝ち抜け ' + rule.param1 + '〇 / 失格 ' + rule.param2 + '×';
+      if (t === 'attack_survival') return '初期点 ' + rule.param1 + ' / 他人正解 -' + rule.param2 + ' / 自誤答 -' + rule.param3;
+      return '';
+    }
+
+    function isResting(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      return (rule.type === 'maru_rest' || rule.type === 'freeze') && Number(player.restRemaining || 0) > 0;
+    }
+
+    function getSwedishNextMissAdd(player) {
+      const c = Number(player.correct || 0);
+      if (c >= 1 && c <= 2) return 2;
+      if (c >= 3 && c <= 5) return 3;
+      if (c >= 6) return 4;
+      return 1;
+    }
+
+    function getPresenterMissNote(player) {
+      const rule = state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'maru_rest' || rule.type === 'freeze') {
+        const rest = Number(player.restRemaining || 0);
+        if (rest > 0) return 'Lock ' + rest;
+      }
+      if (rule.type === 'swedish') return '+' + getSwedishNextMissAdd(player);
+      return '';
+    }
+
+    function getBaseStatus(player) {
+      const rule = state.ruleConfig || { type: 'maru_batsu' };
+      if (rule.type === 'divide') {
+        const point = Number(player.currentPoint || 0);
+        if (point <= 0) return '失格';
+        if (point >= getRuleWinScore(rule)) return '勝抜';
+        return '進行中';
+      }
+      if (rule.type === 'up_down') {
+        if (Number(player.correct || 0) >= getRuleWinScore(rule)) return '勝抜';
+        if (Number(player.upDownStrike || 0) >= 2) return '失格';
+        return '進行中';
+      }
+      if (rule.type === 'attack_survival') {
+        if (Number(player.attackPoint || 0) <= 0) return '失格';
+        return '進行中';
+      }
+      if (rule.type === 'by') {
+        const startMiss = Number(rule.param1) || 10;
+        const loseMissCount = Number(rule.param3) || 6;
+        const currentMissPoint = Number(player.currentPoint || startMiss);
+        const loseAtPoint = startMiss - loseMissCount;
+        if (currentMissPoint <= loseAtPoint) return '失格';
+        if ((Number(player.correct || 0) * currentMissPoint) >= getRuleWinScore(rule)) return '勝抜';
+        return '進行中';
+      }
+      if (rule.type === 'timerace') return '進行中';
+      if (rule.type === 'swedish') {
+        if (Number(player.correct || 0) >= getRuleWinScore(rule)) return '勝抜';
+        if (Number(player.miss || 0) >= (Number(rule.param2) || 10)) return '失格';
+        return '進行中';
+      }
+      if (rule.type === 'combo_correct' || rule.type === 'combo_miss') {
+        if (Number(player.correct || 0) >= getRuleWinScore(rule)) return '勝抜';
+        if (Number(player.miss || 0) >= (Number(rule.param2) || 3)) return '失格';
+        return '進行中';
+      }
+      if (Number(player.correct || 0) >= Number(state.winScore || 7)) return '勝抜';
+      if (Number(player.miss || 0) >= Number(state.loseMiss || 3)) return '失格';
+      return '進行中';
+    }
+
+    function getStatus(player) {
+      const base = getBaseStatus(player);
+      if (base !== '進行中') return base;
+      if (state.presenterRanked) return '判定';
+      return '進行中';
+    }
+
+    function isQualifiedByRank(player, orderedPlayers) {
+      if (!state.presenterRanked) return false;
+      const q = Math.max(0, Number(state.qualifierCount || 1));
+      if (!q) return false;
+      const topOverall = orderedPlayers.slice(0, q).map(p => p.id);
+      return getStatus(player) === '判定' && topOverall.includes(player.id);
+    }
+
+    function getDisplayPlayers() {
+      const list = clonePlayers(state.players);
+      if (state.presenterRanked) {
+        list.sort((a, b) => {
+          const sa = getStatus(a);
+          const sb = getStatus(b);
+
+          if (sa === '勝抜' || sb === '勝抜') {
+            if (sa === '勝抜' && sb !== '勝抜') return -1;
+            if (sa !== '勝抜' && sb === '勝抜') return 1;
+            const aw = Number(a.winOrder || 0);
+            const bw = Number(b.winOrder || 0);
+            if (aw !== bw) return aw - bw;
+            return a.name.localeCompare(b.name, 'ja');
+          }
+
+          if (sa === '失格' || sb === '失格') {
+            if (sa === '失格' && sb !== '失格') return 1;
+            if (sa !== '失格' && sb === '失格') return -1;
+            const al = Number(a.loseOrder || 0);
+            const bl = Number(b.loseOrder || 0);
+            if (al !== bl) return bl - al;
+            return a.name.localeCompare(b.name, 'ja');
+          }
+
+          if (Number(b.correct || 0) !== Number(a.correct || 0)) return Number(b.correct || 0) - Number(a.correct || 0);
+          if (Number(a.miss || 0) !== Number(b.miss || 0)) return Number(a.miss || 0) - Number(b.miss || 0);
+          return a.name.localeCompare(b.name, 'ja');
+        });
+      } else {
+        list.sort((a, b) => Number(a.inputOrder || 0) - Number(b.inputOrder || 0));
+      }
+      return list;
+    }
+
+    function getPointValue(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
+      if (rule.type === 'divide') return Number(player.currentPoint || 0);
+      if (rule.type === 'attack_survival') return Number(player.attackPoint || 0);
+      if (rule.type === 'by') return Number(player.correct || 0) * Number(player.currentPoint || (Number(rule.param1) || 10));
+      if (rule.type === 'timerace') {
+        if (timerSessionActive && !state.timerRevealScores) return '？';
+        return Number(player.currentPoint || 0);
+      }
+      return '';
+    }
+
+    function getDisplayedCorrect(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
+      if (rule.type === 'timerace' && timerSessionActive && !state.timerRevealScores) return '？';
+      return Number(player.correct || 0);
+    }
+
+    function getDisplayedMiss(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      const timerSessionActive = rule.type === 'timerace' && (state.timerRunning || state.timerPaused || state.timerFinished || Number(state.timerRemainingMs || 0) > 0);
+      if (rule.type === 'timerace' && timerSessionActive && !state.timerRevealScores) return '？';
+      if (rule.type === 'up_down') return Number(player.upDownStrike || 0);
+      if (rule.type === 'by') return Number(player.currentPoint || (Number(rule.param1) || 10));
+      return Number(player.miss || 0);
+    }
+
+    function isCorrectReach(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      const status = getStatus(player);
+      if (status === '勝抜' || status === '失格') return false;
+      if (rule.type === 'timerace' || rule.type === 'attack_survival') return false;
+      if (rule.type === 'divide') {
+        const current = Number(player.currentPoint || 0);
+        return current < getRuleWinScore(rule) && current + 10 >= getRuleWinScore(rule);
+      }
+      if (rule.type === 'by') {
+        const missPoint = Number(player.currentPoint || (Number(rule.param1) || 10));
+        const now = Number(player.correct || 0) * missPoint;
+        const nxt = (Number(player.correct || 0) + 1) * missPoint;
+        return now < getRuleWinScore(rule) && nxt >= getRuleWinScore(rule);
+      }
+      if (rule.type === 'combo_correct') {
+        const remain = getRuleWinScore(rule) - Number(player.correct || 0);
+        if (player.standingCorrect) return remain === 1 || remain === 2;
+        return remain === 1;
+      }
+      return Number(player.correct || 0) === getRuleWinScore(rule) - 1;
+    }
+
+    function isMissReach(player, ruleConfig) {
+      const rule = ruleConfig || state.ruleConfig || { type: 'maru_batsu' };
+      const status = getStatus(player);
+      if (status === '勝抜' || status === '失格') return false;
+      if (rule.type === 'attack_survival') {
+        const now = Number(player.attackPoint || 0);
+        return now > 0 && now <= (Number(rule.param3) || 0);
+      }
+      if (rule.type === 'divide') {
+        const current = Number(player.currentPoint || 0);
+        const nextMiss = Number(player.miss || 0) + 1;
+        return Math.floor(current / nextMiss) <= 0;
+      }
+      if (rule.type === 'up_down') return Number(player.upDownStrike || 0) === 1;
+      if (rule.type === 'by') {
+        const startMiss = Number(rule.param1) || 10;
+        const loseMissCount = Number(rule.param3) || 6;
+        const loseAtPoint = startMiss - loseMissCount;
+        return Number(player.currentPoint || startMiss) === loseAtPoint + 1;
+      }
+      if (rule.type === 'swedish') {
+        const c = Number(player.correct || 0);
+        let addMiss = 1;
+        if (c >= 1 && c <= 2) addMiss = 2;
+        else if (c >= 3 && c <= 5) addMiss = 3;
+        else if (c >= 6) addMiss = 4;
+        return Number(player.miss || 0) + addMiss >= (Number(rule.param2) || 10);
+      }
+      if (rule.type === 'combo_miss') {
+        if (!player.standingMiss) return false;
+        return Number(player.miss || 0) + 2 >= (Number(rule.param2) || 3);
+      }
+      return Number(getDisplayedMiss(player, rule)) === Number(state.loseMiss || 3) - 1;
+    }
+
+    function renderRule() {
+      const rule = state.ruleConfig || RULE_PRESETS.maru_batsu;
+      document.getElementById('ruleName').textContent = rule.label || RULE_PRESETS[rule.type]?.label || '-';
+      document.getElementById('ruleDetail').textContent = getRuleDetailText(rule);
+      document.getElementById('pointHeader').style.display = isPointRule(rule) ? '' : 'none';
+      document.getElementById('correctHeader').textContent = '正解';
+      document.getElementById('missHeader').textContent = '誤答';
+    }
+
+    function renderQuestion() {
+      const titleEl = document.getElementById('questionTitle');
+      const progressEl = document.getElementById('questionProgress');
+      const questionEl = document.getElementById('questionText');
+      const answerEl = document.getElementById('answerBox');
+      const explanationEl = document.getElementById('explanationBox');
+
+      const questions = state.questions || [];
+      if (questions.length === 0) {
+        progressEl.textContent = '0 / 0';
+        titleEl.textContent = 'まだありません';
+        questionEl.textContent = '正解または誤答が入ると、直前の問題・答え・解説がここに表示されます。';
+        answerEl.textContent = '答え：';
+        explanationEl.textContent = '解説：';
+        return;
+      }
+
+      progressEl.textContent = `${Math.min(Number(state.currentQuestionIndex || 0) + 1, questions.length)} / ${questions.length}`;
+      const idx = Number(state.lastJudgedIndex ?? -1);
+      if (idx < 0 || !questions[idx]) {
+        titleEl.textContent = 'まだありません';
+        questionEl.textContent = '正解または誤答が入ると、直前の問題・答え・解説がここに表示されます。';
+        answerEl.textContent = '答え：';
+        explanationEl.textContent = '解説：';
+        return;
+      }
+
+      const q = questions[idx];
+      titleEl.textContent = `第${q.number}問`;
+      questionEl.textContent = q.question || '';
+      answerEl.textContent = `答え：${q.answer || ''}`;
+      explanationEl.textContent = `解説：${q.explanation || ''}`;
+    }
+
+    function renderSummary(displayPlayers) {
+      let playing = 0, win = 0, lose = 0;
+      displayPlayers.forEach(player => {
+        const status = getStatus(player);
+        if (status === '進行中' || status === '判定') playing++;
+        if (status === '勝抜') win++;
+        if (status === '失格') lose++;
+      });
+      document.getElementById('totalPlayers').textContent = String(displayPlayers.length);
+      document.getElementById('playingCount').textContent = String(playing);
+      document.getElementById('winCount').textContent = String(win);
+      document.getElementById('loseCount').textContent = String(lose);
+    }
+
+    function renderTimer() {
+      const rule = state.ruleConfig || RULE_PRESETS.maru_batsu;
+      const wrap = document.getElementById('timerWrap');
+      if (rule.type !== 'timerace') {
+        wrap.style.display = 'none';
+        return;
+      }
+      wrap.style.display = 'block';
+
+      const totalMs = (Number(rule.param1) || 5) * 60 * 1000;
+      let remain = totalMs;
+      if (state.timerRunning) remain = Math.max(0, Number(state.timerRemainingMs || 0));
+      else if (state.timerFinished) remain = 0;
+      else if (Number(state.timerRemainingMs || 0) > 0) remain = Number(state.timerRemainingMs || 0);
+
+      const pct = Math.max(0, Math.min(100, totalMs ? (remain / totalMs) * 100 : 0));
+      document.getElementById('timerText').textContent = formatTimer(remain);
+      document.getElementById('timerFill').style.width = pct + '%';
+    }
+
+    function renderPlayers() {
+      const grid = document.getElementById('scoreGrid');
+      const displayPlayers = getDisplayPlayers();
+      grid.innerHTML = '';
+
+      if (!displayPlayers.length) {
+        grid.innerHTML = '<div class="loading">参加者がまだいません。</div>';
+        renderSummary(displayPlayers);
+        return;
+      }
+
+      displayPlayers.forEach((player, i) => {
+        const status = getStatus(player);
+        const row = document.createElement('div');
+        row.className = [
+          'row',
+          isResting(player, state.ruleConfig) ? 'resting' : '',
+          isQualifiedByRank(player, displayPlayers) ? 'qualified' : '',
+          status === '勝抜' ? 'win' : '',
+          status === '失格' ? 'lose' : ''
+        ].filter(Boolean).join(' ');
+
+        const nameClass = [
+          'name',
+          ((state.ruleConfig || {}).type === 'combo_correct' && player.standingCorrect) ? 'stand-correct' : '',
+          ((state.ruleConfig || {}).type === 'combo_miss' && player.standingMiss) ? 'stand-miss' : ''
+        ].filter(Boolean).join(' ');
+
+        const note = getPresenterMissNote(player);
+        row.innerHTML =
+          `<div class="rank">${i + 1}</div>` +
+          `<div class="${nameClass}">${player.name}</div>` +
+          `<div class="num point" style="display:${isPointRule(state.ruleConfig) ? '' : 'none'}">${getPointValue(player, state.ruleConfig)}</div>` +
+          `<div class="num correct ${isCorrectReach(player, state.ruleConfig) ? 'reach' : ''}">${getDisplayedCorrect(player, state.ruleConfig)}</div>` +
+          `<div class="num miss ${isMissReach(player, state.ruleConfig) ? 'reach' : ''}"><span class="miss-wrap"><span>${getDisplayedMiss(player, state.ruleConfig)}</span>${note ? `<span class="miss-note">${note}</span>` : ''}</span></div>`;
+        grid.appendChild(row);
+      });
+
+      renderSummary(displayPlayers);
+    }
+
+    function render() {
+      renderRule();
+      renderQuestion();
+      renderTimer();
+      renderPlayers();
+    }
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    let unsubscribe = null;
+
+    function connectRoom(roomName) {
+      currentRoom = roomName || 'quiz-room-1';
+      roomInput.value = currentRoom;
+      roomPill.textContent = 'room: ' + currentRoom;
+
+      const url = new URL(location.href);
+      url.searchParams.set('room', currentRoom);
+      history.replaceState(null, '', url.toString());
+
+      if (unsubscribe) unsubscribe();
+
+      const roomRef = ref(db, 'rooms/' + currentRoom);
+      unsubscribe = onValue(roomRef, (snap) => {
+        const val = snap.val();
+        if (!val) {
+          document.getElementById('scoreGrid').innerHTML = '<div class="loading">この room のデータがまだありません。</div>';
+          return;
+        }
+        state = {
+          ...state,
+          ...val,
+          players: Array.isArray(val.players) ? val.players : [],
+          questions: Array.isArray(val.questions) ? val.questions : [],
+          ruleConfig: val.ruleConfig || state.ruleConfig
+        };
+        render();
+      });
+    }
+
+    connectBtn.addEventListener('click', () => {
+      connectRoom((roomInput.value || '').trim() || 'quiz-room-1');
+    });
+
+    roomInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') connectRoom((roomInput.value || '').trim() || 'quiz-room-1');
+    });
+
+    connectRoom(currentRoom);
+  </script>
+</body>
+</html>

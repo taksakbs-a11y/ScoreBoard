@@ -177,14 +177,21 @@
 
     .score-head {
       display: grid;
-      grid-template-columns: 28px minmax(0,1fr) 76px 44px 52px;
-      gap: 8px;
+      grid-template-columns: 32px minmax(0,1fr) 72px 52px 52px;
+      gap: 6px;
       align-items: center;
       color: #e5e7eb;
       font-weight: 800;
       font-size: 12px;
       margin-bottom: 10px;
-      padding: 0 8px;
+      padding: 0 10px;
+    }
+    .score-head > div {
+      text-align: center;
+      white-space: nowrap;
+    }
+    .score-head > div:nth-child(2) {
+      text-align: left;
     }
     .score-grid {
       display: grid;
@@ -192,8 +199,8 @@
     }
     .row {
       display: grid;
-      grid-template-columns: 28px minmax(0,1fr) 76px 44px 52px;
-      gap: 8px;
+      grid-template-columns: 32px minmax(0,1fr) 72px 52px 52px;
+      gap: 6px;
       align-items: center;
       border: 1px solid #334155;
       border-radius: 16px;
@@ -211,6 +218,9 @@
       font-weight: 800;
       text-align: center;
       font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .name {
       font-size: 24px;
@@ -274,12 +284,12 @@
       .answer-box, .explanation-box { font-size: 15px; }
       .summary { grid-template-columns: repeat(2, 1fr); }
       .score-head, .row {
-        grid-template-columns: 24px minmax(0,1fr) 68px 40px 44px;
-        gap: 6px;
+        grid-template-columns: 24px minmax(0,1fr) 64px 44px 44px;
+        gap: 4px;
       }
       .score-head {
         font-size: 11px;
-        padding: 0 4px;
+        padding: 0 8px;
       }
       .row {
         padding: 10px 8px;
@@ -303,6 +313,26 @@
         <input id="roomInput" value="quiz-room-1" />
         <button id="connectBtn">roomを開く</button>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="score-head" id="scoreHead">
+        <div>順</div>
+        <div>名前</div>
+        <div id="pointHeader" style="display:none;">得点</div>
+        <div id="correctHeader">正解</div>
+        <div id="missHeader">誤答</div>
+      </div>
+      <div id="scoreGrid" class="score-grid">
+        <div class="loading">読み込み中...</div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="mini-card"><div class="label">参加者数</div><div id="totalPlayers" class="value">0</div></div>
+      <div class="mini-card"><div class="label">進行中</div><div id="playingCount" class="value">0</div></div>
+      <div class="mini-card"><div class="label">勝抜</div><div id="winCount" class="value">0</div></div>
+      <div class="mini-card"><div class="label">失格</div><div id="loseCount" class="value">0</div></div>
     </div>
 
     <div class="card">
@@ -332,26 +362,6 @@
         <div id="questionText" class="question-text">正解または誤答が入ると、直前の問題・答え・解説がここに表示されます。</div>
         <div id="answerBox" class="answer-box">答え：</div>
         <div id="explanationBox" class="explanation-box">解説：</div>
-      </div>
-    </div>
-
-    <div class="summary">
-      <div class="mini-card"><div class="label">参加者数</div><div id="totalPlayers" class="value">0</div></div>
-      <div class="mini-card"><div class="label">進行中</div><div id="playingCount" class="value">0</div></div>
-      <div class="mini-card"><div class="label">勝抜</div><div id="winCount" class="value">0</div></div>
-      <div class="mini-card"><div class="label">失格</div><div id="loseCount" class="value">0</div></div>
-    </div>
-
-    <div class="card">
-      <div class="score-head" id="scoreHead">
-        <div>順</div>
-        <div>名前</div>
-        <div id="pointHeader" style="display:none;">得点</div>
-        <div id="correctHeader">正解</div>
-        <div id="missHeader">誤答</div>
-      </div>
-      <div id="scoreGrid" class="score-grid">
-        <div class="loading">読み込み中...</div>
       </div>
     </div>
   </div>

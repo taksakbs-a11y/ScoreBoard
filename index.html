@@ -1741,13 +1741,14 @@
           return {
             ...kept,
             name,
-            inputOrder: idx + 1
+            inputOrder: idx
           };
         }
+
         return {
           id: crypto.randomUUID(),
           name,
-          inputOrder: idx + 1,
+          inputOrder: idx,
           correct: 0,
           miss: rule.type === 'by' ? (Number(rule.param1) || 10) : 0,
           currentPoint: rule.type === 'divide'
@@ -1766,7 +1767,8 @@
 
       await setRemoteState({
         ...state,
-        players: nextPlayers
+        players: nextPlayers,
+        playerInput: playerInput.value
       });
 
       showMessage('参加者を反映しました。同名の参加者は得点・状態を引き継ぎます。');

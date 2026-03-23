@@ -1715,11 +1715,62 @@
 
     if (!isPresenter) {
       setPlayersBtn.addEventListener('click', async () => {
-        pushHistory();
-        const next = { ...state, players: initializePlayersForRule(buildPlayersFromInput(), state.ruleConfig), playerInput: playerInput.value };
-        await setRemoteState(next);
-        showMessage('参加者を反映しました。');
+      pushHistory();
+
+      const names = (playerInput.value || '')
+        .split(/?
+/)
+        .map(v => v.trim())
+        .filter(Boolean);
+
+      const rule = readRuleConfigFromInputs();
+
+      // 既存参加者を「名前完全一致」で引き継ぐ
+      // 同名が複数いた場合は先頭から順に1回ずつ対応させる
+      const existingBuckets = new Map();
+      (state.players || []).forEach(p => {
+        const key = String(p.name || '').trim();
+        if (!existingBuckets.has(key)) existingBuckets.set(key, []);
+        existingBuckets.get(key).push({ ...p });
       });
+
+      const nextPlayers = names.map((name, idx) => {
+        const bucket = existingBuckets.get(name);
+        if (bucket && bucket.length) {
+          const kept = bucket.shift();
+          return {
+            ...kept,
+            name,
+            inputOrder: idx + 1
+          };
+        }
+        return {
+          id: crypto.randomUUID(),
+          name,
+          inputOrder: idx + 1,
+          correct: 0,
+          miss: rule.type === 'by' ? (Number(rule.param1) || 10) : 0,
+          currentPoint: rule.type === 'divide'
+            ? (Number(rule.param1) || 10)
+            : (rule.type === 'by' ? (Number(rule.param1) || 10) : 0),
+          upDownStrike: 0,
+          restRemaining: 0,
+          pendingRest: 0,
+          attackPoint: rule.type === 'attack_survival' ? (Number(rule.param1) || 30) : 0,
+          standingCorrect: false,
+          standingMiss: false,
+          winOrder: 0,
+          loseOrder: 0
+        };
+      });
+
+      await setRemoteState({
+        ...state,
+        players: nextPlayers
+      });
+
+      showMessage('参加者を反映しました。同名の参加者は得点・状態を引き継ぎます。');
+    });
 
       resetAllBtn.addEventListener('click', async () => {
         pushHistory();
